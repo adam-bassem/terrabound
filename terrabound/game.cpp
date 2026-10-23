@@ -14,6 +14,8 @@
 #include "raylib.h"
 #include "playercamera.hpp"
 #include "character.hpp"
+#include "chunk.hpp"
+#include "raymath.h"
 
 namespace
 {
@@ -25,6 +27,8 @@ namespace
 	Character character(player_camera);
 	// Track if cursor is enabled or not
 	bool cursor_enabled;
+
+	Chunk chunk0_0_0(Vector3{ 0.0f, 0.0f, 0.0f });
 }
 
 int main()
@@ -43,7 +47,8 @@ int main()
 	// quit from X button (TODO: make a quit menu button later)
 	SetExitKey(0);
 
-	player_camera.SetPosition({ 0, 15, 0 });
+	chunk0_0_0.GenerateMesh();
+	chunk0_0_0.GenerateModel();
 
 	// As long as the window is still open, keep looping
 	while (!WindowShouldClose())
@@ -55,7 +60,12 @@ int main()
 
 		BeginMode3D(player_camera.GetNativeCamera());
 
-		DrawGrid(100, 20);
+		for (int i = 0; i < chunk_height_subchunks; i++)
+		{
+			Model* model = chunk0_0_0.GetModel(i);
+			if (!model) continue;
+			DrawModel(*model, { 0, 0, 0 }, 1, WHITE);
+		}
 
 		EndMode3D();
 
@@ -73,6 +83,28 @@ int main()
 			cursor_enabled ? DisableCursor() : EnableCursor();
 			cursor_enabled = !cursor_enabled;
 		}
+
+		Vector3 f = player_camera.Forward();
+
+		float angle = atan2f(f.x, f.z) * RAD2DEG;
+		if (angle < 0) angle += 360.0f;
+		if (angle >= 315.0f || angle < 45.0f)
+		{
+			DrawText("Facing north", 20, 20, 12, BLUE);
+		}
+		else if (angle >= 45.0f && angle < 135.0f)
+		{
+			DrawText("Facing east", 20, 20, 12, RED);
+		}
+		else if (angle >= 135.0f && angle < 225.0f)
+		{
+			DrawText("Facing south", 20, 20, 12, BLUE);
+		}
+		else if (angle >= 225.0f && angle < 315.0f)
+		{
+			DrawText("Facing west", 20, 20, 12, RED);
+		}
+		DrawFPS(20, 40);
 
 		EndDrawing();
 	}
