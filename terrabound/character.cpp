@@ -1,3 +1,17 @@
+/*
+ * =============================================================================
+ * File        : character.cpp
+ * Author      : Adam Bassem
+ * Created     : 23/10/2026
+ *
+ * Description :
+ *     Character code (for player character only), handles movement of player
+ *     with velocity and friction (basic physics)
+ *
+ * Copyright © 2026 Adam Bassem & Alex. All rights reserved. Licensed under Apache 2.0.
+ * =============================================================================
+ */
+
 #include "character.hpp"
 #include "raymath.h"
 
