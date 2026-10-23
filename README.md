@@ -1,9 +1,9 @@
 # terrabound Project
 ## Featuring Adam Bassem and Alex
 
-[![Stars](https://img.shields.io/github/stars/adam-bassem/PyramydOS?style=for-the-badge&logo=github)](https://github.com/adam-bassem/terrabound/stargazers)
-[![Contributors](https://img.shields.io/github/contributors/adam-bassem/PyramydOS?style=for-the-badge)](https://github.com/adam-bassem/terrabound/graphs/contributors)
-[![Forks](https://img.shields.io/github/forks/adam-bassem/PyramydOS?style=for-the-badge&logo=github)](https://github.com/adam-bassem/terrabound/forks)
+[![Stars](https://img.shields.io/github/stars/adam-bassem/terrabound?style=for-the-badge&logo=github)](https://github.com/adam-bassem/terrabound/stargazers)
+[![Contributors](https://img.shields.io/github/contributors/adam-bassem/terrabound?style=for-the-badge)](https://github.com/adam-bassem/terrabound/graphs/contributors)
+[![Forks](https://img.shields.io/github/forks/adam-bassem/terrabound?style=for-the-badge&logo=github)](https://github.com/adam-bassem/terrabound/forks)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge)](https://github.com/adam-bassem/terrabound/blob/main/LICENSE)
 
 ### Copyright notice and license
