@@ -13,12 +13,16 @@
 
 #include "raylib.h"
 #include "playercamera.hpp"
+#include "character.hpp"
 
 namespace
 {
 	// Player camera, handles camera rotation, and player
 	// character updates it's position
 	PlayerCamera player_camera;
+	// Player character, handles movement and connects
+	// to player camera to update it's position
+	Character character(player_camera);
 	// Track if cursor is enabled or not
 	bool cursor_enabled;
 }
@@ -26,9 +30,8 @@ namespace
 int main()
 {
 	// Enable anti-aliasing (MSAA 4x)
-	SetConfigFlags(FLAG_MSAA_4X_HINT);
-	// Enable vertical sync
-	SetConfigFlags(FLAG_VSYNC_HINT);
+	// and enable vertical sync
+	SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
 	// Create a 1280x720 window titled "terrabound"
 	InitWindow(1280, 720, "terrabound");
 	// Limit FPS to current monitor's refresh rate
@@ -56,10 +59,12 @@ int main()
 
 		EndMode3D();
 
-		// Update camera rotation, only if cursor disabled (hidden)
+		// Update camera rotation and player movement,
+		// only if cursor disabled (hidden)
 		if (!cursor_enabled)
 		{
 			player_camera.Update();
+			character.Update();
 		}
 
 		// If escape is pressed, toggle cursor on/off

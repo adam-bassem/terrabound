@@ -99,6 +99,7 @@ Vector3 PlayerCamera::Up()
 void PlayerCamera::SetPosition(Vector3 position)
 {
 	camera.position = position;
+	camera.target = Vector3Add(position, forward);
 }
 
 // Returns the native camera (Camera3D)
