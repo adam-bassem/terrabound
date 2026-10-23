@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="terrabound/terrabound.vcxproj" Id="f7ba7cb8-1425-48da-85a7-f8fc91e03df7" />
+</Solution>
