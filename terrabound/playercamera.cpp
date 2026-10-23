@@ -42,9 +42,13 @@ void PlayerCamera::Update()
 	Vector2 mouse_delta = GetMouseDelta();
 
 	// Update pitch
-	pitch -= mouse_delta.y * camera_sensitivity;
+	pitch -= mouse_delta.y * camera_sensitivity * DEG2RAD;
 	// Update yaw
-	yaw -= mouse_delta.x * camera_sensitivity;
+	yaw -= mouse_delta.x * camera_sensitivity * DEG2RAD;
+
+	// clamp pitch
+	const float max_pitch = 89.0f * DEG2RAD;
+	pitch = std::clamp(pitch, -max_pitch, max_pitch);
 
 	// F_x = cos(pitch) * sin(yaw)
 	// F_y = sin(pitch)

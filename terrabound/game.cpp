@@ -56,13 +56,17 @@ int main()
 
 		EndMode3D();
 
-		// Update camera rotation
-		player_camera.Update();
+		// Update camera rotation, only if cursor disabled (hidden)
+		if (!cursor_enabled)
+		{
+			player_camera.Update();
+		}
 
 		// If escape is pressed, toggle cursor on/off
 		if (IsKeyPressed(KEY_ESCAPE))
 		{
 			cursor_enabled ? DisableCursor() : EnableCursor();
+			cursor_enabled = !cursor_enabled;
 		}
 
 		EndDrawing();

@@ -19,8 +19,8 @@ class PlayerCamera
 {
 public:
 	// mouse_sensitivity = 0.5 if 100%
-	// (((mouse_sensitivity * 0.6) + 0.2)^3) * 0.06
-	float camera_sensitivity = 0.0075f;
+	// (((mouse_sensitivity * 0.6) + 0.2)^3) * 1.2
+	float camera_sensitivity = 0.15f;
 
 	PlayerCamera();
 	~PlayerCamera();
