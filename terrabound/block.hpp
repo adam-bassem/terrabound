@@ -22,13 +22,13 @@ enum block_type
 // later add actual states for actual blocks
 enum block_state //Blocks -Alex
 {
-	BLOCK_RED,
-	BLOCK_GREEN,
-	BLOCK_BLUE,
-	BLOCK_BLACK,
-	BLOCK_WHITE,
-	BLOCK_GRAY,
-	BLOCK_BROWN,
+	BLOCK_RED, //Reserved
+	BLOCK_GRASS,
+	BLOCK_WATER,
+	BLOCK_BEDROCK,
+	BLOCK_SNOW,
+	BLOCK_STONE,
+	BLOCK_DIRT,
 };
 
 struct block_data

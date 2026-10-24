@@ -45,6 +45,8 @@ void animateSky();
 
 int main()
 {
+
+	SetTraceLogLevel(LOG_ERROR);
 	// Enable anti-aliasing (MSAA 4x)
 	// and enable vertical sync
 	SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);

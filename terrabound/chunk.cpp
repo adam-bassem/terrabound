@@ -54,21 +54,21 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 
 
 				if (y >= 260) {
-					b.state = BLOCK_WHITE;
+					b.state = BLOCK_SNOW;
 				}
 				else if (y > 150 && y < 260) {
-					b.state = BLOCK_GRAY;
+					b.state = BLOCK_STONE;
 				}
 
 				else if (y > 140 && y <= 150) {
-					b.state = BLOCK_GREEN;
+					b.state = BLOCK_GRASS;
 				}
 
 				else if (y > 135 && y <= 140) {
-					b.state = BLOCK_BLUE;
+					b.state = BLOCK_WATER;
 				}
 				else if (y > 80 && y < 135) {
-					b.state = BLOCK_BROWN;
+					b.state = BLOCK_DIRT;
 				}
 
 
@@ -79,17 +79,17 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 				//}
 				else {
 					b.type = BLOCK_FILLED;
-					b.state = BLOCK_GRAY;
+					b.state = BLOCK_STONE;
 				}
 
-
+				//Random Air pockets
 				if (std::rand() * 3 == x || std::rand() * 3 == z) {
 					//y--;
 					cx--;
 					cz++;
 
 
-					if (b.state == BLOCK_GRAY) {
+					if (b.state == BLOCK_STONE) {
 						b.type = BLOCK_AIR;
 					}
 
@@ -177,7 +177,7 @@ void Chunk::GenerateMesh()
 						break;
 					}
 
-					case BLOCK_GREEN:
+					case BLOCK_GRASS:
 					{
 						//r = 0x00;
 						//g = 0xFF;
@@ -209,48 +209,144 @@ void Chunk::GenerateMesh()
 						break;
 					}
 
-					case BLOCK_BLUE:
+					case BLOCK_WATER:
 					{
-						r = 0x00;
-						g = 0x00;
-						b = 0xFF;
-						a = 0xFF;
+						//r = 0x00;
+						//g = 0x00;
+						//b = 0xFF;
+						//a = 0xFF;
+
+					 //REMEMBER to start from 0.00390625f, (pixel 0, 0) then multiply this value by how far your texture starts and ends in pixels
+
+						//bottom left corner
+						u0 = 0.75f;
+						v0 = 0.0625f;
+
+						//bottom right corner
+						u1 = 0.8125f;
+						v1 = 0.0625f;
+
+
+						//top right corner
+						u2 = 0.8125f;;
+						v2 = 0.00390625f;
+
+						//top left corner
+						u3 = 0.75f;
+						v3 = 0.00390625f;
+
 						break;
 					}
 
-					case BLOCK_BLACK:
+					case BLOCK_BEDROCK:
 					{
-						r = 0x00;
-						g = 0x00;
-						b = 0x00;
-						a = 0xFF;
+						//r = 0x00;
+						//g = 0x00;
+						//b = 0x00;
+						//a = 0xFF;
+
+						//REMEMBER to start from 0.00390625f, (pixel 0, 0) then multiply this value by how far your texture starts and ends in pixels
+
+						//bottom left corner
+						u0 = 0.6875;
+						v0 = 0.0625f;
+
+						//bottom right corner
+						u1 = 0.75f;
+						v1 = 0.0625f;
+
+
+						//top right corner
+						u2 = 0.75f;
+						v2 = 0.00390625f;
+
+						//top left corner
+						u3 = 0.6875;
+						v3 = 0.00390625f;
 						break;
 					}
 
-					case BLOCK_WHITE:
+					case BLOCK_SNOW:
 					{
-						r = 0xFF;
-						g = 0xFF;
-						b = 0xFF;
-						a = 0xFF;
+						//r = 0xFF;
+						//g = 0xFF;
+						//b = 0xFF;
+						//a = 0xFF;
+
+						//REMEMBER to start from 0.00390625f, (pixel 0, 0) then multiply this value by how far your texture starts and ends in pixels
+
+						//bottom left corner
+						u0 = 0.625f;
+						v0 = 0.0625f;
+
+						//bottom right corner
+						u1 = 0.6875f;
+						v1 = 0.0625f;
+
+
+						//top right corner
+						u2 = 0.6875f;
+						v2 = 0.00390625f;
+
+						//top left corner
+						u3 = 0.625f;
+						v3 = 0.00390625f;
+
 						break;
 					}
 
-					case BLOCK_GRAY :
+					case BLOCK_STONE :
 					{
-						r = 0xE5;
-						g = 0xE5;
-						b = 0xE5;
-						a = 0xFF;
+						//r = 0xE5;
+						//g = 0xE5;
+						//b = 0xE5;
+						//a = 0xFF;
+
+					   //REMEMBER to start from 0.00390625f, (pixel 0, 0) then multiply this value by how far your texture starts and ends in pixels
+
+						//bottom left corner
+						u0 = 0.1875;
+						v0 = 0.0625f;
+
+						//bottom right corner
+						u1 = 0.25;
+						v1 = 0.0625f;
+
+
+						//top right corner
+						u2 = 0.25;
+						v2 = 0.00390625f;
+
+						//top left corner
+						u3 = 0.1875;
+						v3 = 0.00390625f;
 						break;
 					}
 
-					case BLOCK_BROWN:
+					case BLOCK_DIRT:
 					{
-						r = 0xD9;
-						g = 0xAA;
-						b = 0x69;
-						a = 0xFF;
+						//r = 0xD9;
+						//g = 0xAA;
+						//b = 0x69;
+						//a = 0xFF;
+						// 
+						//REMEMBER to start from 0.00390625f, (pixel 0, 0) then multiply this value by how far your texture starts and ends in pixels
+
+						//bottom left corner
+						u0 = 0.125f;
+						v0 = 0.0625;
+
+						//bottom right corner
+						u1 = 0.1875;
+						v1 = 0.0625;
+
+
+						//top right corner
+						u2 = 0.1875;
+						v2 = 0.00390625f;
+						//top left corner
+						u3 = 0.125f;
+						v3 = 0.00390625f;
 						break;
 					}
 
