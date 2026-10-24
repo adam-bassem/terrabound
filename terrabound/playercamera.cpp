@@ -20,7 +20,7 @@ PlayerCamera::PlayerCamera()
 {
 	// Initialise raylib's camera
 	camera.fovy = 90.0f;
-	camera.position = { 0, 0, 0 };
+	camera.position = { 0, 60, 0 };
 	camera.projection = CAMERA_PERSPECTIVE;
 	camera.target = { 0, 0, 1 };
 	camera.up = { 0, 1, 0 };
@@ -109,7 +109,7 @@ Vector3 PlayerCamera::GetPosition()
 
 int PlayerCamera::GetRenderDistanceChunks()
 {
-	return 4;
+	return 8;
 }
 
 // Returns the native camera (Camera3D)

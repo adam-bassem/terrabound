@@ -20,11 +20,15 @@ enum block_type
 
 // test states for filled block,
 // later add actual states for actual blocks
-enum block_state
+enum block_state //Blocks -Alex
 {
 	BLOCK_RED,
 	BLOCK_GREEN,
 	BLOCK_BLUE,
+	BLOCK_BLACK,
+	BLOCK_WHITE,
+	BLOCK_GRAY,
+	BLOCK_BROWN,
 };
 
 struct block_data

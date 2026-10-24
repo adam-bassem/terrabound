@@ -33,7 +33,7 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 		for (int z = 0; z < subchunk_size; z++)
 		{
 			constexpr float terrain_base = 96.0f;
-			constexpr float terrain_amp = 120.0f;
+			constexpr float terrain_amp = 420.0f;
 
 			float n = heightmap.GetNoise(position.x + x, position.z + z);
 			float h = std::tanh(n * 2.0f) * 0.5f + 0.5f;
@@ -44,7 +44,32 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 			{
 				block_data& b = GetBlock({ (float)x, (float)y, (float)z });
 				b.type = BLOCK_FILLED;
-				b.state = (block_state)GetRandomValue(0, 2);
+
+
+			//	int worldPeak = 160;
+
+
+
+				if (y >= 160) {
+					b.state = BLOCK_WHITE;
+				}
+				else if (y > 150 && y < 160) {
+					b.state = BLOCK_GRAY;
+				}
+
+				else if (y > 140 && y <= 150) {
+					b.state = BLOCK_GREEN;
+				}
+
+				else if (y > 135 && y <= 140) {
+					b.state = BLOCK_BLUE;
+				}
+				else {
+					b.state = BLOCK_BROWN;
+				}
+
+
+			//	b.state = (block_state)GetRandomValue(0, 4); //So this here generates a block with a random state -Alex;
 			}
 		}
 }
@@ -66,6 +91,8 @@ Chunk::~Chunk()
 	}
 }
 
+
+//Culling Directions
 #define CULL_NORTH 0b00000001
 #define CULL_SOUTH 0b00000010
 #define CULL_EAST  0b00000100
@@ -127,6 +154,42 @@ void Chunk::GenerateMesh()
 						r = 0x00;
 						g = 0x00;
 						b = 0xFF;
+						a = 0xFF;
+						break;
+					}
+
+					case BLOCK_BLACK:
+					{
+						r = 0x00;
+						g = 0x00;
+						b = 0x00;
+						a = 0xFF;
+						break;
+					}
+
+					case BLOCK_WHITE:
+					{
+						r = 0xFF;
+						g = 0xFF;
+						b = 0xFF;
+						a = 0xFF;
+						break;
+					}
+
+					case BLOCK_GRAY :
+					{
+						r = 0xE5;
+						g = 0xE5;
+						b = 0xE5;
+						a = 0xFF;
+						break;
+					}
+
+					case BLOCK_BROWN:
+					{
+						r = 0xD9;
+						g = 0xAA;
+						b = 0x69;
 						a = 0xFF;
 						break;
 					}

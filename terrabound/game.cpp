@@ -16,6 +16,7 @@
 #include "chunk.hpp"
 #include "raymath.h"
 #include "world.hpp"
+#include "rlgl.h"
 
 namespace
 {
@@ -55,12 +56,16 @@ int main()
 		// Clear the frame to SKYBLUE colour
 		ClearBackground(SKYBLUE);
 
+
+		
+		//rlEnableBackfaceCulling();
 		BeginMode3D(player_camera.GetNativeCamera());
 
 		World::Render(player_camera);
 
-		DrawGrid(100, 10);
+		//DrawGrid(100, 10);
 
+		//rlDisableBackfaceCulling();
 		EndMode3D();
 
 		// Update camera rotation and player movement,
@@ -99,6 +104,8 @@ int main()
 			DrawText("Facing west", 20, 20, 20, RED);
 		}
 		DrawFPS(20, 40);
+
+		DrawText(TextFormat("Player XYZ %f, %f, %f", 2, 2, 2), )
 
 		EndDrawing();
 	}
