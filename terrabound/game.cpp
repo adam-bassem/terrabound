@@ -17,6 +17,8 @@
 #include "raymath.h"
 #include "world.hpp"
 #include "rlgl.h"
+#include <iostream>
+#include <sstream>
 
 namespace
 {
@@ -28,7 +30,18 @@ namespace
 	Character character(player_camera);
 	// Track if cursor is enabled or not
 	bool cursor_enabled;
+
+
+	float rx = 0.0f;
+	float gx = 0.0f;
+	float bx = 0.0f;
+
+	bool hasRx = true;
+	bool hasGx = true;
+	bool hasBx = true;
 }
+
+void animateSky();
 
 int main()
 {
@@ -46,26 +59,47 @@ int main()
 	// quit from X button (TODO: make a quit menu button later)
 	SetExitKey(0);
 
+
+	
 	World::GenerateWorld();
+
+
+
+	//Get the Working Directory
+	std::string workDir = GetApplicationDirectory();
+	//Get the Main Game Directory
+	std::string gameDir = "Terrabound";
+	//Full Game Directory Path
+	std::string combinedDir = workDir + gameDir;
+
+	std::cout << "Dir:" << combinedDir.c_str() << "\n";
+
+	//If this thing doesn't exist then we create it!
+	if (!DirectoryExists(gameDir.c_str())) {
+		MakeDirectory("Terrabound\0");
+		std::cout << "Created Directory: Terrabound!" << "\n";
+	}
+
+	Texture2D tex = LoadTextureFromImage(LoadImage("tiles_atlas.png"));
+	GenTextureMipmaps(&tex);
 
 	// As long as the window is still open, keep looping
 	while (!WindowShouldClose())
 	{
 		BeginDrawing();
+			
+	
 
-		// Clear the frame to SKYBLUE colour
-		ClearBackground(SKYBLUE);
+		animateSky();
 
+		Color color = Color(rx, gx, bx, 255);
 
+		ClearBackground(color);
 		
 		//rlEnableBackfaceCulling();
 		BeginMode3D(player_camera.GetNativeCamera());
-
 		World::Render(player_camera);
 
-		//DrawGrid(100, 10);
-
-		//rlDisableBackfaceCulling();
 		EndMode3D();
 
 		// Update camera rotation and player movement,
@@ -85,32 +119,104 @@ int main()
 
 		Vector3 f = player_camera.Forward();
 
+
+
+		float basedScale = 30.0f;
+
+		float baseX = 20.0f;
+		float baseY = 20.0f;
+
+		float addition = 30.0f;
+
 		float angle = atan2f(f.x, f.z) * RAD2DEG;
 		if (angle < 0) angle += 360.0f;
 		if (angle >= 315.0f || angle < 45.0f)
 		{
-			DrawText("Facing north", 20, 20, 20, BLUE);
+			DrawText("Facing north", baseX, baseY, basedScale, BLUE);
 		}
 		else if (angle >= 45.0f && angle < 135.0f)
 		{
-			DrawText("Facing east", 20, 20, 20, RED);
+			DrawText("Facing east", baseX, baseY, basedScale, RED);
 		}
 		else if (angle >= 135.0f && angle < 225.0f)
 		{
-			DrawText("Facing south", 20, 20, 20, BLUE);
+			DrawText("Facing south", baseX, baseY, basedScale, BLUE);
 		}
 		else if (angle >= 225.0f && angle < 315.0f)
 		{
-			DrawText("Facing west", 20, 20, 20, RED);
+			DrawText("Facing west", baseX, baseY, basedScale, RED);
 		}
-		DrawFPS(20, 40);
+		DrawFPS(20, baseY + addition);
 
-		DrawText(TextFormat("Player XYZ %f, %f, %f", 2, 2, 2), )
+		DrawText(TextFormat("Player XYZ %f, %f, %f", player_camera.GetPosition().x, player_camera.GetPosition().y, player_camera.GetPosition().z), baseX + 2, (baseY * 4) + 2/*62*/, basedScale, DARKGREEN);
+		DrawText(TextFormat("Player XYZ %f, %f, %f", player_camera.GetPosition().x, player_camera.GetPosition().y, player_camera.GetPosition().z), baseX, baseY * 4, basedScale, GREEN);
+		DrawText(TextFormat("World Seed: %i", World::getWorldSeed()), baseX, baseY * 6, basedScale, PURPLE); //Display the World Seed
 
 		EndDrawing();
+	}
+
+
+	//Get the world seed and then write it to a file
+	std::string seed = TextFormat("%i", World::getWorldSeed());
+
+	if (!FileExists("seed.txt")) {
+		SaveFileText("seed.txt", seed.c_str());
+	}
+	else {
+		SaveFileText("seed.txt", seed.c_str());
 	}
 
 	// Finished program
 	CloseWindow();
 	return 0;
+}
+
+//Code for the animated sky
+static void animateSky() {
+	if (rx > 0.0f && hasRx) {
+		std::sinf(rx -= 1.0f);
+	}
+	else {
+		hasRx = false;
+	}
+
+
+	if (rx < 128.0f && !hasRx) {
+		std::sinf(rx += 1.0f);
+
+	}
+	else {
+		hasRx = true;
+	}
+
+	if (gx > 0.0f && hasGx) {
+		std::sinf(gx -= 1.0f);
+	}
+	else {
+		hasGx = false;
+	}
+
+
+	if (gx < 128.0f && !hasGx) {
+		std::sinf(gx += 1.0f);
+
+	}
+	else {
+		hasGx = true;
+	}
+
+	if (bx > 0.0f && hasBx) {
+		std::sinf(bx -= 2.0f);
+	}
+	else {
+		hasBx = false;
+	}
+
+
+	if (bx < 254.0f && !hasBx) {
+		std::sinf(bx += 2.0f);
+	}
+	else {
+		hasBx = true;
+	}
 }

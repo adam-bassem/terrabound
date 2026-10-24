@@ -45,8 +45,8 @@ void World::Render(PlayerCamera& camera)
 	constexpr int dx[4] = { 0, 0, 1, -1 };
 	constexpr int dz[4] = { 1, -1, 0, 0 };
 
-	constexpr int max_new_chunks = 2;
-	constexpr int max_remesh = 4;
+	constexpr int max_new_chunks = 1;
+	constexpr int max_remesh = 2;
 
 	auto inside = [&](int x, int z)
 		{
@@ -116,4 +116,8 @@ void World::Render(PlayerCamera& camera)
 			}
 		}
 	}
+}
+
+unsigned long long World::getWorldSeed() {
+	return seed;
 }

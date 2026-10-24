@@ -18,4 +18,6 @@ namespace World
 {
 	void GenerateWorld();
 	void Render(PlayerCamera& camera);
+
+	unsigned long long getWorldSeed(); //I added this -Alex
 }

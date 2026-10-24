@@ -29,6 +29,9 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 	heightmap.SetDomainWarpType(FastNoiseLite::DomainWarpType_OpenSimplex2);
 	heightmap.SetDomainWarpAmp(22.0f);
 
+
+
+	
 	for (int x = 0; x < subchunk_size; x++)
 		for (int z = 0; z < subchunk_size; z++)
 		{
@@ -40,20 +43,20 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 			h = std::pow(h, 1.5f);
 			int height = (int)(terrain_base + h * terrain_amp);
 
+
+			int cx = x;
+			int cz = z;
+
 			for (int y = 0; y < height; y++)
 			{
 				block_data& b = GetBlock({ (float)x, (float)y, (float)z });
 				b.type = BLOCK_FILLED;
 
 
-			//	int worldPeak = 160;
-
-
-
-				if (y >= 160) {
+				if (y >= 260) {
 					b.state = BLOCK_WHITE;
 				}
-				else if (y > 150 && y < 160) {
+				else if (y > 150 && y < 260) {
 					b.state = BLOCK_GRAY;
 				}
 
@@ -64,12 +67,43 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 				else if (y > 135 && y <= 140) {
 					b.state = BLOCK_BLUE;
 				}
-				else {
+				else if (y > 80 && y < 135) {
 					b.state = BLOCK_BROWN;
 				}
 
 
-			//	b.state = (block_state)GetRandomValue(0, 4); //So this here generates a block with a random state -Alex;
+				//else if (y == 80) {
+
+				//	
+				//	b.type = BLOCK_AIR;			
+				//}
+				else {
+					b.type = BLOCK_FILLED;
+					b.state = BLOCK_GRAY;
+				}
+
+
+				if (std::rand() * 3 == x || std::rand() * 3 == z) {
+					//y--;
+					cx--;
+					cz++;
+
+
+					if (b.state == BLOCK_GRAY) {
+						b.type = BLOCK_AIR;
+					}
+
+					if (cz > 3) {
+						b.type = BLOCK_AIR;
+					}
+					
+
+					
+				}
+				else {
+					b.type = BLOCK_FILLED;
+				}
+
 			}
 		}
 }
@@ -100,6 +134,7 @@ Chunk::~Chunk()
 #define CULL_UP    0b00010000
 #define CULL_DOWN  0b00100000
 
+//Generate the chunk meshes
 void Chunk::GenerateMesh()
 {
 	for (int i = 0; i < chunk_height_subchunks; i++)
@@ -114,6 +149,7 @@ void Chunk::GenerateMesh()
 		std::vector<unsigned char> colours;
 		std::vector<float> normals;
 		std::vector<unsigned short> indices;
+		std::vector<float> texCoords;
 
 		Subchunk& subchunk = subchunks[subchunk_i];
 
@@ -125,9 +161,10 @@ void Chunk::GenerateMesh()
 				{
 					block_data& this_block = subchunk.blocks[x][y][z];
 					if (this_block.type == BLOCK_AIR) continue;
-					uint8_t cull = 0;
+						uint8_t cull = 0;
 
 					uint8_t r = 0xFF, g = 0xFF, b = 0xFF, a = 0xFF;
+					float u0 = 0, v0 = 0, u1 = 1, v1 = 0, u2 = 1, v2 = 1, u3 = 0, v3 = 1;
 
 					switch (this_block.state)
 					{
@@ -142,10 +179,33 @@ void Chunk::GenerateMesh()
 
 					case BLOCK_GREEN:
 					{
-						r = 0x00;
-						g = 0xFF;
-						b = 0x00;
+						//r = 0x00;
+						//g = 0xFF;
+						//b = 0x00;
+						//a = 0xFF;
+
+						r = 0xFF;
+						g = 0XFF;
+						b = 0xFF;
 						a = 0xFF;
+
+
+						//bottom left corner
+						u0 = 0.00390625f;
+						v0 = 0.00390625f;
+
+						//bottom right corner
+						u1 = 0.0625;
+						v1 = 0.00390625f;
+
+						
+						//top right corner
+						u2 = 0.0625;
+						v2 = 0.0625;
+						//top left corner
+						u3 = 0.00390625f;
+						v3 = 0.0625;
+
 						break;
 					}
 
@@ -244,6 +304,8 @@ void Chunk::GenerateMesh()
 						vertices.push_back(0 + _y);
 						vertices.push_back(1 + z);
 
+			
+
 						// 1,0,1
 						normals.push_back(1 + x);
 						normals.push_back(0 + _y);
@@ -251,6 +313,8 @@ void Chunk::GenerateMesh()
 						vertices.push_back(1 + x);
 						vertices.push_back(0 + _y);
 						vertices.push_back(1 + z);
+
+				
 
 						// 1,1,1
 						normals.push_back(1 + x);
@@ -260,6 +324,9 @@ void Chunk::GenerateMesh()
 						vertices.push_back(1 + _y);
 						vertices.push_back(1 + z);
 
+					
+
+
 						// 0,1,1
 						normals.push_back(0 + x);
 						normals.push_back(1 + _y);
@@ -267,6 +334,24 @@ void Chunk::GenerateMesh()
 						vertices.push_back(0 + x);
 						vertices.push_back(1 + _y);
 						vertices.push_back(1 + z);
+
+
+						//North face UV's
+
+						texCoords.push_back(u0);
+						texCoords.push_back(v0);
+
+						texCoords.push_back(u1);
+						texCoords.push_back(v1);
+
+						texCoords.push_back(u2);
+						texCoords.push_back(v2);
+
+						texCoords.push_back(u3);
+						texCoords.push_back(v3);
+
+						//North face UVs
+
 
 						// 0,1,2,2,3,0 NORTH
 						indices.push_back(0 + indcs);
@@ -297,6 +382,8 @@ void Chunk::GenerateMesh()
 						vertices.push_back(0 + _y);
 						vertices.push_back(0 + z);
 
+					
+
 						// 1,0,0
 						normals.push_back(1 + x);
 						normals.push_back(0 + _y);
@@ -304,6 +391,8 @@ void Chunk::GenerateMesh()
 						vertices.push_back(1 + x);
 						vertices.push_back(0 + _y);
 						vertices.push_back(0 + z);
+
+				
 
 						// 1,1,0
 						normals.push_back(1 + x);
@@ -313,6 +402,9 @@ void Chunk::GenerateMesh()
 						vertices.push_back(1 + _y);
 						vertices.push_back(0 + z);
 
+
+					
+
 						// 0,1,0
 						normals.push_back(0 + x);
 						normals.push_back(1 + _y);
@@ -320,6 +412,23 @@ void Chunk::GenerateMesh()
 						vertices.push_back(0 + x);
 						vertices.push_back(1 + _y);
 						vertices.push_back(0 + z);
+
+
+
+
+						///South face UVs
+
+						texCoords.push_back(u0);
+						texCoords.push_back(v0);
+
+						texCoords.push_back(u1);
+						texCoords.push_back(v1);
+
+						texCoords.push_back(u2);
+						texCoords.push_back(v2);
+
+						texCoords.push_back(u3);
+						texCoords.push_back(v3);
 
 						// 0,1,2,2,3,0
 						indices.push_back(0 + indcs);
@@ -350,6 +459,8 @@ void Chunk::GenerateMesh()
 						vertices.push_back(0 + _y);
 						vertices.push_back(0 + z);
 
+					
+
 						// 1,0,1
 						normals.push_back(1);
 						normals.push_back(0);
@@ -357,6 +468,8 @@ void Chunk::GenerateMesh()
 						vertices.push_back(1 + x);
 						vertices.push_back(0 + _y);
 						vertices.push_back(1 + z);
+
+						
 
 						// 1,1,1
 						normals.push_back(1);
@@ -366,6 +479,7 @@ void Chunk::GenerateMesh()
 						vertices.push_back(1 + _y);
 						vertices.push_back(1 + z);
 
+
 						// 1,1,0
 						normals.push_back(1);
 						normals.push_back(0);
@@ -373,6 +487,20 @@ void Chunk::GenerateMesh()
 						vertices.push_back(1 + x);
 						vertices.push_back(1 + _y);
 						vertices.push_back(0 + z);
+
+						//East Face UVs
+
+						texCoords.push_back(u0);
+						texCoords.push_back(v0);
+
+						texCoords.push_back(u1);
+						texCoords.push_back(v1);
+
+						texCoords.push_back(u2);
+						texCoords.push_back(v2);
+
+						texCoords.push_back(u3);
+						texCoords.push_back(v3);
 
 						// 0,1,2,2,3,0
 						indices.push_back(0 + indcs);
@@ -403,6 +531,8 @@ void Chunk::GenerateMesh()
 						vertices.push_back(0 + _y);
 						vertices.push_back(0 + z);
 
+					
+
 						// 0,0,1
 						normals.push_back(-1);
 						normals.push_back(0);
@@ -410,6 +540,8 @@ void Chunk::GenerateMesh()
 						vertices.push_back(0 + x);
 						vertices.push_back(0 + _y);
 						vertices.push_back(1 + z);
+
+					
 
 						// 0,1,1
 						normals.push_back(-1);
@@ -419,6 +551,7 @@ void Chunk::GenerateMesh()
 						vertices.push_back(1 + _y);
 						vertices.push_back(1 + z);
 
+					
 						// 0,1,0
 						normals.push_back(-1);
 						normals.push_back(0);
@@ -426,6 +559,20 @@ void Chunk::GenerateMesh()
 						vertices.push_back(0 + x);
 						vertices.push_back(1 + _y);
 						vertices.push_back(0 + z);
+
+
+						//West fasce UVs
+						texCoords.push_back(u0);
+						texCoords.push_back(v0);
+
+						texCoords.push_back(u1);
+						texCoords.push_back(v1);
+
+						texCoords.push_back(u2);
+						texCoords.push_back(v2);
+
+						texCoords.push_back(u3);
+						texCoords.push_back(v3);
 
 						// 0,1,2,2,3,0
 						indices.push_back(0 + indcs);
@@ -435,8 +582,7 @@ void Chunk::GenerateMesh()
 						indices.push_back(3 + indcs);
 						indices.push_back(0 + indcs);
 
-						for (int i = 0; i < 4; i++)
-						{
+						for (int i = 0; i < 4; i++)	{
 							colours.push_back(r);
 							colours.push_back(g);
 							colours.push_back(b);
@@ -456,6 +602,8 @@ void Chunk::GenerateMesh()
 						vertices.push_back(1 + _y);
 						vertices.push_back(0 + z);
 
+					
+
 						// 0,1,1
 						normals.push_back(0 + x);
 						normals.push_back(1 + _y);
@@ -463,6 +611,8 @@ void Chunk::GenerateMesh()
 						vertices.push_back(0 + x);
 						vertices.push_back(1 + _y);
 						vertices.push_back(1 + z);
+
+					
 
 						// 1,1,1
 						normals.push_back(1 + x);
@@ -472,6 +622,7 @@ void Chunk::GenerateMesh()
 						vertices.push_back(1 + _y);
 						vertices.push_back(1 + z);
 
+					
 						// 1,1,0
 						normals.push_back(1 + x);
 						normals.push_back(1 + _y);
@@ -479,6 +630,19 @@ void Chunk::GenerateMesh()
 						vertices.push_back(1 + x);
 						vertices.push_back(1 + _y);
 						vertices.push_back(0 + z);
+
+						//Up face UV's
+						texCoords.push_back(u0);
+						texCoords.push_back(v0);
+
+						texCoords.push_back(u1);
+						texCoords.push_back(v1);
+
+						texCoords.push_back(u2);
+						texCoords.push_back(v2);
+
+						texCoords.push_back(u3);
+						texCoords.push_back(v3);
 
 						// 0,1,2,2,3,0
 						indices.push_back(0 + indcs);
@@ -509,6 +673,8 @@ void Chunk::GenerateMesh()
 						vertices.push_back(0 + _y);
 						vertices.push_back(0 + z);
 
+					
+
 						// 1,0,0
 						normals.push_back(1 + x);
 						normals.push_back(0 + _y);
@@ -516,6 +682,8 @@ void Chunk::GenerateMesh()
 						vertices.push_back(1 + x);
 						vertices.push_back(0 + _y);
 						vertices.push_back(0 + z);
+
+					
 
 						// 1,0,1
 						normals.push_back(1 + x);
@@ -525,6 +693,8 @@ void Chunk::GenerateMesh()
 						vertices.push_back(0 + _y);
 						vertices.push_back(1 + z);
 
+						
+
 						// 0,0,1
 						normals.push_back(0 + x);
 						normals.push_back(0 + _y);
@@ -532,6 +702,21 @@ void Chunk::GenerateMesh()
 						vertices.push_back(0 + x);
 						vertices.push_back(0 + _y);
 						vertices.push_back(1 + z);
+
+
+						//Down Faces UVs
+
+						texCoords.push_back(u0);
+						texCoords.push_back(v0);
+
+						texCoords.push_back(u1);
+						texCoords.push_back(v1);
+
+						texCoords.push_back(u2);
+						texCoords.push_back(v2);
+
+						texCoords.push_back(u3);
+						texCoords.push_back(v3);
 
 						// 0,1,2,2,3,0
 						indices.push_back(0 + indcs);
@@ -554,19 +739,24 @@ void Chunk::GenerateMesh()
 		}
 
 		Mesh mesh{};
+		
 		mesh.vertexCount = vertices.size() / 3;
 		mesh.triangleCount = indices.size() / 3;
 		mesh.vertices = (float*)MemAlloc(vertices.size() * sizeof(float));
+		mesh.texcoords = (float*)MemAlloc(texCoords.size() * sizeof(float));
 		mesh.normals = (float*)MemAlloc(normals.size() * sizeof(float));
-		mesh.colors = (unsigned char*)MemAlloc(colours.size() * sizeof(unsigned char));
+		//mesh.colors = (unsigned char*)MemAlloc(colours.size() * sizeof(unsigned char));
 		mesh.indices = (unsigned short*)MemAlloc(indices.size() * sizeof(unsigned short));
 
+
 		std::copy(vertices.begin(), vertices.end(), mesh.vertices);
+		std::copy(texCoords.begin(), texCoords.end(), mesh.texcoords);
 		std::copy(normals.begin(), normals.end(), mesh.normals);
-		std::copy(colours.begin(), colours.end(), mesh.colors);
+	//	std::copy(colours.begin(), colours.end(), mesh.colors);
 		std::copy(indices.begin(), indices.end(), mesh.indices);
 
 		vertices.clear();
+		texCoords.clear();
 		indices.clear();
 		normals.clear();
 		colours.clear();
@@ -587,6 +777,7 @@ void Chunk::GenerateModel()
 	{
 		Subchunk& subchunk = subchunks[i];
 		subchunk.subchunk_model = LoadModelFromMesh(subchunk.subchunk_mesh);
+		subchunk.subchunk_model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("tiles_atlas.png");
 		subchunk.subchunk_mesh = Mesh{};
 	}
 
