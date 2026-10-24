@@ -29,6 +29,8 @@ public:
 	Vector3 Right();
 	Vector3 Up();
 	void SetPosition(Vector3 position);
+	Vector3 GetPosition();
+	int GetRenderDistanceChunks();
 	Camera3D& GetNativeCamera();
 
 private:

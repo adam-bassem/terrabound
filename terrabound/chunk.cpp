@@ -1,28 +1,52 @@
 /*
- * =============================================================================
+ * ============================================================================
  * File        : chunk.cpp
  * Author      : Adam Bassem
  *
  * Description :
- *     Chunk class, contains block data for full chunk, and mesh data
+ *     Chunk class, contains block data for full chunk, and mesh data and generation
  *
  * Copyright © 2026 Adam Bassem & Alex. All rights reserved. Licensed under Apache 2.0.
- * =============================================================================
+ * ============================================================================
  */
 
 #include "chunk.hpp"
 #include <vector>
+#include "FastNoiseLite.hpp"
+#include <algorithm>
 
-Chunk::Chunk(Vector3 position) : Position(position)
+Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 {
-	for (int y = 0; y < subchunk_size * chunk_height_subchunks; y++)
-		for (int x = 0; x < subchunk_size; x++)
-			for (int z = 0; z < subchunk_size; z++)
+	FastNoiseLite heightmap;
+	heightmap.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+	heightmap.SetSeed(seed);
+	heightmap.SetFrequency(0.005f);
+	heightmap.SetFractalType(FastNoiseLite::FractalType_FBm);
+	heightmap.SetFractalOctaves(8);
+	heightmap.SetFractalLacunarity(1.85f);
+	heightmap.SetFractalGain(0.37f);
+	heightmap.SetFractalWeightedStrength(0.11f);
+	heightmap.SetDomainWarpType(FastNoiseLite::DomainWarpType_OpenSimplex2);
+	heightmap.SetDomainWarpAmp(22.0f);
+
+	for (int x = 0; x < subchunk_size; x++)
+		for (int z = 0; z < subchunk_size; z++)
+		{
+			constexpr float terrain_base = 96.0f;
+			constexpr float terrain_amp = 120.0f;
+
+			float n = heightmap.GetNoise(position.x + x, position.z + z);
+			float h = std::tanh(n * 2.0f) * 0.5f + 0.5f;
+			h = std::pow(h, 1.5f);
+			int height = (int)(terrain_base + h * terrain_amp);
+
+			for (int y = 0; y < height; y++)
 			{
 				block_data& b = GetBlock({ (float)x, (float)y, (float)z });
 				b.type = BLOCK_FILLED;
 				b.state = (block_state)GetRandomValue(0, 2);
 			}
+		}
 }
 
 static void ReleaseSubchunk(Subchunk& subchunk)
@@ -67,379 +91,406 @@ void Chunk::GenerateMesh()
 		Subchunk& subchunk = subchunks[subchunk_i];
 
 		for (int x = 0; x < subchunk_size; x++)
-		for (int y = 0; y < subchunk_size; y++)
-		for (int z = 0; z < subchunk_size; z++)
 		{
-			block_data& this_block = subchunk.blocks[x][y][z];
-			if (this_block.type == BLOCK_AIR) continue;
-			uint8_t cull = 0;
-
-			uint8_t r = 0xFF, g = 0xFF, b = 0xFF, a = 0xFF;
-
-			switch (this_block.state)
+			for (int y = 0; y < subchunk_size; y++)
 			{
-				case BLOCK_RED:
+				for (int z = 0; z < subchunk_size; z++)
 				{
-					r = 0xFF;
-					g = 0x00;
-					b = 0x00;
-					a = 0xFF;
-					break;
-				}
+					block_data& this_block = subchunk.blocks[x][y][z];
+					if (this_block.type == BLOCK_AIR) continue;
+					uint8_t cull = 0;
 
-				case BLOCK_GREEN:
-				{
-					r = 0x00;
-					g = 0xFF;
-					b = 0x00;
-					a = 0xFF;
-					break;
-				}
+					uint8_t r = 0xFF, g = 0xFF, b = 0xFF, a = 0xFF;
 
-				case BLOCK_BLUE:
-				{
-					r = 0x00;
-					g = 0x00;
-					b = 0xFF;
-					a = 0xFF;
-					break;
-				}
+					switch (this_block.state)
+					{
+					case BLOCK_RED:
+					{
+						r = 0xFF;
+						g = 0x00;
+						b = 0x00;
+						a = 0xFF;
+						break;
+					}
 
-				default:
-				{
-					break;
-				}
-			}
+					case BLOCK_GREEN:
+					{
+						r = 0x00;
+						g = 0xFF;
+						b = 0x00;
+						a = 0xFF;
+						break;
+					}
 
-			if (x > 0 && subchunk.blocks[x - 1][y][z].type != BLOCK_AIR) cull |= CULL_WEST;
-			if (x < subchunk_size - 1 && subchunk.blocks[x + 1][y][z].type != BLOCK_AIR) cull |= CULL_EAST;
-			if (y > 0 && subchunk.blocks[x][y - 1][z].type != BLOCK_AIR) cull |= CULL_DOWN;
-			if (y < subchunk_size - 1 && subchunk.blocks[x][y + 1][z].type != BLOCK_AIR) cull |= CULL_UP;
-			if (z > 0 && subchunk.blocks[x][y][z - 1].type != BLOCK_AIR) cull |= CULL_SOUTH;
-			if (z < subchunk_size - 1 && subchunk.blocks[x][y][z + 1].type != BLOCK_AIR) cull |= CULL_NORTH;
+					case BLOCK_BLUE:
+					{
+						r = 0x00;
+						g = 0x00;
+						b = 0xFF;
+						a = 0xFF;
+						break;
+					}
 
-			int _y = y + (subchunk_size * subchunk_i);
+					default:
+					{
+						break;
+					}
+					}
 
-			if (!(cull & CULL_NORTH))
-			{
-				const int indcs = vertices.size() / 3;
+					int _y = y + (subchunk_size * subchunk_i);
 
-				// 0,0,1
-				normals.push_back(0 + x);
-				normals.push_back(0 + _y);
-				normals.push_back(1 + z);
-				vertices.push_back(0 + x);
-				vertices.push_back(0 + _y);
-				vertices.push_back(1 + z);
+					if (IsSolidAt(x - 1, _y, z))
+					{
+						cull |= CULL_WEST;
+					}
 
-				// 1,0,1
-				normals.push_back(1 + x);
-				normals.push_back(0 + _y);
-				normals.push_back(1 + z);
-				vertices.push_back(1 + x);
-				vertices.push_back(0 + _y);
-				vertices.push_back(1 + z);
+					if (IsSolidAt(x + 1, _y, z))
+					{
+						cull |= CULL_EAST;
+					}
 
-				// 1,1,1
-				normals.push_back(1 + x);
-				normals.push_back(1 + _y);
-				normals.push_back(1 + z);
-				vertices.push_back(1 + x);
-				vertices.push_back(1 + _y);
-				vertices.push_back(1 + z);
+					if (IsSolidAt(x, _y - 1, z))
+					{
+						cull |= CULL_DOWN;
+					}
 
-				// 0,1,1
-				normals.push_back(0 + x);
-				normals.push_back(1 + _y);
-				normals.push_back(1 + z);
-				vertices.push_back(0 + x);
-				vertices.push_back(1 + _y);
-				vertices.push_back(1 + z);
+					if (IsSolidAt(x, _y + 1, z))
+					{
+						cull |= CULL_UP;
+					}
 
-				// 0,1,2,2,3,0 NORTH
-				indices.push_back(0 + indcs);
-				indices.push_back(1 + indcs);
-				indices.push_back(2 + indcs);
-				indices.push_back(2 + indcs);
-				indices.push_back(3 + indcs);
-				indices.push_back(0 + indcs);
+					if (IsSolidAt(x, _y, z - 1))
+					{
+						cull |= CULL_SOUTH;
+					}
 
-				for (int i = 0; i < 4; i++)
-				{
-					colours.push_back(r);
-					colours.push_back(g);
-					colours.push_back(b);
-					colours.push_back(a);
-				}
-			}
+					if (IsSolidAt(x, _y, z + 1))
+					{
+						cull |= CULL_NORTH;
+					}
 
-			if (!(cull & CULL_SOUTH))
-			{
-				const int indcs = vertices.size() / 3;
+					if (!(cull & CULL_NORTH))
+					{
+						const int indcs = vertices.size() / 3;
 
-				// 0,0,0
-				normals.push_back(0 + x);
-				normals.push_back(0 + _y);
-				normals.push_back(0 + z);
-				vertices.push_back(0 + x);
-				vertices.push_back(0 + _y);
-				vertices.push_back(0 + z);
+						// 0,0,1
+						normals.push_back(0 + x);
+						normals.push_back(0 + _y);
+						normals.push_back(1 + z);
+						vertices.push_back(0 + x);
+						vertices.push_back(0 + _y);
+						vertices.push_back(1 + z);
 
-				// 1,0,0
-				normals.push_back(1 + x);
-				normals.push_back(0 + _y);
-				normals.push_back(0 + z);
-				vertices.push_back(1 + x);
-				vertices.push_back(0 + _y);
-				vertices.push_back(0 + z);
+						// 1,0,1
+						normals.push_back(1 + x);
+						normals.push_back(0 + _y);
+						normals.push_back(1 + z);
+						vertices.push_back(1 + x);
+						vertices.push_back(0 + _y);
+						vertices.push_back(1 + z);
 
-				// 1,1,0
-				normals.push_back(1 + x);
-				normals.push_back(1 + _y);
-				normals.push_back(0 + z);
-				vertices.push_back(1 + x);
-				vertices.push_back(1 + _y);
-				vertices.push_back(0 + z);
+						// 1,1,1
+						normals.push_back(1 + x);
+						normals.push_back(1 + _y);
+						normals.push_back(1 + z);
+						vertices.push_back(1 + x);
+						vertices.push_back(1 + _y);
+						vertices.push_back(1 + z);
 
-				// 0,1,0
-				normals.push_back(0 + x);
-				normals.push_back(1 + _y);
-				normals.push_back(0 + z);
-				vertices.push_back(0 + x);
-				vertices.push_back(1 + _y);
-				vertices.push_back(0 + z);
+						// 0,1,1
+						normals.push_back(0 + x);
+						normals.push_back(1 + _y);
+						normals.push_back(1 + z);
+						vertices.push_back(0 + x);
+						vertices.push_back(1 + _y);
+						vertices.push_back(1 + z);
 
-				// 0,1,2,2,3,0
-				indices.push_back(0 + indcs);
-				indices.push_back(3 + indcs);
-				indices.push_back(2 + indcs);
-				indices.push_back(2 + indcs);
-				indices.push_back(1 + indcs);
-				indices.push_back(0 + indcs);
+						// 0,1,2,2,3,0 NORTH
+						indices.push_back(0 + indcs);
+						indices.push_back(1 + indcs);
+						indices.push_back(2 + indcs);
+						indices.push_back(2 + indcs);
+						indices.push_back(3 + indcs);
+						indices.push_back(0 + indcs);
 
-				for (int i = 0; i < 4; i++)
-				{
-					colours.push_back(r);
-					colours.push_back(g);
-					colours.push_back(b);
-					colours.push_back(a);
-				}
-			}
+						for (int i = 0; i < 4; i++)
+						{
+							colours.push_back(r);
+							colours.push_back(g);
+							colours.push_back(b);
+							colours.push_back(a);
+						}
+					}
 
-			if (!(cull & CULL_EAST))
-			{
-				const int indcs = vertices.size() / 3;
+					if (!(cull & CULL_SOUTH))
+					{
+						const int indcs = vertices.size() / 3;
 
-				// 1,0,0
-				normals.push_back(1);
-				normals.push_back(0);
-				normals.push_back(0);
-				vertices.push_back(1 + x);
-				vertices.push_back(0 + _y);
-				vertices.push_back(0 + z);
+						// 0,0,0
+						normals.push_back(0 + x);
+						normals.push_back(0 + _y);
+						normals.push_back(0 + z);
+						vertices.push_back(0 + x);
+						vertices.push_back(0 + _y);
+						vertices.push_back(0 + z);
 
-				// 1,0,1
-				normals.push_back(1);
-				normals.push_back(0);
-				normals.push_back(0);
-				vertices.push_back(1 + x);
-				vertices.push_back(0 + _y);
-				vertices.push_back(1 + z);
+						// 1,0,0
+						normals.push_back(1 + x);
+						normals.push_back(0 + _y);
+						normals.push_back(0 + z);
+						vertices.push_back(1 + x);
+						vertices.push_back(0 + _y);
+						vertices.push_back(0 + z);
 
-				// 1,1,1
-				normals.push_back(1);
-				normals.push_back(0);
-				normals.push_back(0);
-				vertices.push_back(1 + x);
-				vertices.push_back(1 + _y);
-				vertices.push_back(1 + z);
+						// 1,1,0
+						normals.push_back(1 + x);
+						normals.push_back(1 + _y);
+						normals.push_back(0 + z);
+						vertices.push_back(1 + x);
+						vertices.push_back(1 + _y);
+						vertices.push_back(0 + z);
 
-				// 1,1,0
-				normals.push_back(1);
-				normals.push_back(0);
-				normals.push_back(0);
-				vertices.push_back(1 + x);
-				vertices.push_back(1 + _y);
-				vertices.push_back(0 + z);
+						// 0,1,0
+						normals.push_back(0 + x);
+						normals.push_back(1 + _y);
+						normals.push_back(0 + z);
+						vertices.push_back(0 + x);
+						vertices.push_back(1 + _y);
+						vertices.push_back(0 + z);
 
-				// 0,1,2,2,3,0
-				indices.push_back(0 + indcs);
-				indices.push_back(3 + indcs);
-				indices.push_back(2 + indcs);
-				indices.push_back(2 + indcs);
-				indices.push_back(1 + indcs);
-				indices.push_back(0 + indcs);
+						// 0,1,2,2,3,0
+						indices.push_back(0 + indcs);
+						indices.push_back(3 + indcs);
+						indices.push_back(2 + indcs);
+						indices.push_back(2 + indcs);
+						indices.push_back(1 + indcs);
+						indices.push_back(0 + indcs);
 
-				for (int i = 0; i < 4; i++)
-				{
-					colours.push_back(r);
-					colours.push_back(g);
-					colours.push_back(b);
-					colours.push_back(a);
-				}
-			}
+						for (int i = 0; i < 4; i++)
+						{
+							colours.push_back(r);
+							colours.push_back(g);
+							colours.push_back(b);
+							colours.push_back(a);
+						}
+					}
 
-			if (!(cull & CULL_WEST))
-			{
-				const int indcs = vertices.size() / 3;
+					if (!(cull & CULL_EAST))
+					{
+						const int indcs = vertices.size() / 3;
 
-				// 0,0,0
-				normals.push_back(-1);
-				normals.push_back(0);
-				normals.push_back(0);
-				vertices.push_back(0 + x);
-				vertices.push_back(0 + _y);
-				vertices.push_back(0 + z);
+						// 1,0,0
+						normals.push_back(1);
+						normals.push_back(0);
+						normals.push_back(0);
+						vertices.push_back(1 + x);
+						vertices.push_back(0 + _y);
+						vertices.push_back(0 + z);
 
-				// 0,0,1
-				normals.push_back(-1);
-				normals.push_back(0);
-				normals.push_back(0);
-				vertices.push_back(0 + x);
-				vertices.push_back(0 + _y);
-				vertices.push_back(1 + z);
+						// 1,0,1
+						normals.push_back(1);
+						normals.push_back(0);
+						normals.push_back(0);
+						vertices.push_back(1 + x);
+						vertices.push_back(0 + _y);
+						vertices.push_back(1 + z);
 
-				// 0,1,1
-				normals.push_back(-1);
-				normals.push_back(0);
-				normals.push_back(0);
-				vertices.push_back(0 + x);
-				vertices.push_back(1 + _y);
-				vertices.push_back(1 + z);
+						// 1,1,1
+						normals.push_back(1);
+						normals.push_back(0);
+						normals.push_back(0);
+						vertices.push_back(1 + x);
+						vertices.push_back(1 + _y);
+						vertices.push_back(1 + z);
 
-				// 0,1,0
-				normals.push_back(-1);
-				normals.push_back(0);
-				normals.push_back(0);
-				vertices.push_back(0 + x);
-				vertices.push_back(1 + _y);
-				vertices.push_back(0 + z);
+						// 1,1,0
+						normals.push_back(1);
+						normals.push_back(0);
+						normals.push_back(0);
+						vertices.push_back(1 + x);
+						vertices.push_back(1 + _y);
+						vertices.push_back(0 + z);
 
-				// 0,1,2,2,3,0
-				indices.push_back(0 + indcs);
-				indices.push_back(1 + indcs);
-				indices.push_back(2 + indcs);
-				indices.push_back(2 + indcs);
-				indices.push_back(3 + indcs);
-				indices.push_back(0 + indcs);
+						// 0,1,2,2,3,0
+						indices.push_back(0 + indcs);
+						indices.push_back(3 + indcs);
+						indices.push_back(2 + indcs);
+						indices.push_back(2 + indcs);
+						indices.push_back(1 + indcs);
+						indices.push_back(0 + indcs);
 
-				for (int i = 0; i < 4; i++)
-				{
-					colours.push_back(r);
-					colours.push_back(g);
-					colours.push_back(b);
-					colours.push_back(a);
-				}
-			}
+						for (int i = 0; i < 4; i++)
+						{
+							colours.push_back(r);
+							colours.push_back(g);
+							colours.push_back(b);
+							colours.push_back(a);
+						}
+					}
 
-			if (!(cull & CULL_UP))
-			{
-				const int indcs = vertices.size() / 3;
+					if (!(cull & CULL_WEST))
+					{
+						const int indcs = vertices.size() / 3;
 
-				// 0,1,0
-				normals.push_back(0 + x);
-				normals.push_back(1 + _y);
-				normals.push_back(0 + z);
-				vertices.push_back(0 + x);
-				vertices.push_back(1 + _y);
-				vertices.push_back(0 + z);
+						// 0,0,0
+						normals.push_back(-1);
+						normals.push_back(0);
+						normals.push_back(0);
+						vertices.push_back(0 + x);
+						vertices.push_back(0 + _y);
+						vertices.push_back(0 + z);
 
-				// 0,1,1
-				normals.push_back(0 + x);
-				normals.push_back(1 + _y);
-				normals.push_back(1 + z);
-				vertices.push_back(0 + x);
-				vertices.push_back(1 + _y);
-				vertices.push_back(1 + z);
+						// 0,0,1
+						normals.push_back(-1);
+						normals.push_back(0);
+						normals.push_back(0);
+						vertices.push_back(0 + x);
+						vertices.push_back(0 + _y);
+						vertices.push_back(1 + z);
 
-				// 1,1,1
-				normals.push_back(1 + x);
-				normals.push_back(1 + _y);
-				normals.push_back(1 + z);
-				vertices.push_back(1 + x);
-				vertices.push_back(1 + _y);
-				vertices.push_back(1 + z);
+						// 0,1,1
+						normals.push_back(-1);
+						normals.push_back(0);
+						normals.push_back(0);
+						vertices.push_back(0 + x);
+						vertices.push_back(1 + _y);
+						vertices.push_back(1 + z);
 
-				// 1,1,0
-				normals.push_back(1 + x);
-				normals.push_back(1 + _y);
-				normals.push_back(0 + z);
-				vertices.push_back(1 + x);
-				vertices.push_back(1 + _y);
-				vertices.push_back(0 + z);
+						// 0,1,0
+						normals.push_back(-1);
+						normals.push_back(0);
+						normals.push_back(0);
+						vertices.push_back(0 + x);
+						vertices.push_back(1 + _y);
+						vertices.push_back(0 + z);
 
-				// 0,1,2,2,3,0
-				indices.push_back(0 + indcs);
-				indices.push_back(1 + indcs);
-				indices.push_back(2 + indcs);
-				indices.push_back(2 + indcs);
-				indices.push_back(3 + indcs);
-				indices.push_back(0 + indcs);
+						// 0,1,2,2,3,0
+						indices.push_back(0 + indcs);
+						indices.push_back(1 + indcs);
+						indices.push_back(2 + indcs);
+						indices.push_back(2 + indcs);
+						indices.push_back(3 + indcs);
+						indices.push_back(0 + indcs);
 
-				for (int i = 0; i < 4; i++)
-				{
-					colours.push_back(r);
-					colours.push_back(g);
-					colours.push_back(b);
-					colours.push_back(a);
-				}
-			}
+						for (int i = 0; i < 4; i++)
+						{
+							colours.push_back(r);
+							colours.push_back(g);
+							colours.push_back(b);
+							colours.push_back(a);
+						}
+					}
 
-			if (!(cull & CULL_DOWN))
-			{
-				const int indcs = vertices.size() / 3;
+					if (!(cull & CULL_UP))
+					{
+						const int indcs = vertices.size() / 3;
 
-				// 0,0,0
-				normals.push_back(0 + x);
-				normals.push_back(0 + _y);
-				normals.push_back(0 + z);
-				vertices.push_back(0 + x);
-				vertices.push_back(0 + _y);
-				vertices.push_back(0 + z);
+						// 0,1,0
+						normals.push_back(0 + x);
+						normals.push_back(1 + _y);
+						normals.push_back(0 + z);
+						vertices.push_back(0 + x);
+						vertices.push_back(1 + _y);
+						vertices.push_back(0 + z);
 
-				// 1,0,0
-				normals.push_back(1 + x);
-				normals.push_back(0 + _y);
-				normals.push_back(0 + z);
-				vertices.push_back(1 + x);
-				vertices.push_back(0 + _y);
-				vertices.push_back(0 + z);
+						// 0,1,1
+						normals.push_back(0 + x);
+						normals.push_back(1 + _y);
+						normals.push_back(1 + z);
+						vertices.push_back(0 + x);
+						vertices.push_back(1 + _y);
+						vertices.push_back(1 + z);
 
-				// 1,0,1
-				normals.push_back(1 + x);
-				normals.push_back(0 + _y);
-				normals.push_back(1 + z);
-				vertices.push_back(1 + x);
-				vertices.push_back(0 + _y);
-				vertices.push_back(1 + z);
+						// 1,1,1
+						normals.push_back(1 + x);
+						normals.push_back(1 + _y);
+						normals.push_back(1 + z);
+						vertices.push_back(1 + x);
+						vertices.push_back(1 + _y);
+						vertices.push_back(1 + z);
 
-				// 0,0,1
-				normals.push_back(0 + x);
-				normals.push_back(0 + _y);
-				normals.push_back(1 + z);
-				vertices.push_back(0 + x);
-				vertices.push_back(0 + _y);
-				vertices.push_back(1 + z);
+						// 1,1,0
+						normals.push_back(1 + x);
+						normals.push_back(1 + _y);
+						normals.push_back(0 + z);
+						vertices.push_back(1 + x);
+						vertices.push_back(1 + _y);
+						vertices.push_back(0 + z);
 
-				// 0,1,2,2,3,0
-				indices.push_back(0 + indcs);
-				indices.push_back(1 + indcs);
-				indices.push_back(2 + indcs);
-				indices.push_back(2 + indcs);
-				indices.push_back(3 + indcs);
-				indices.push_back(0 + indcs);
+						// 0,1,2,2,3,0
+						indices.push_back(0 + indcs);
+						indices.push_back(1 + indcs);
+						indices.push_back(2 + indcs);
+						indices.push_back(2 + indcs);
+						indices.push_back(3 + indcs);
+						indices.push_back(0 + indcs);
 
-				for (int i = 0; i < 4; i++)
-				{
-					colours.push_back(r);
-					colours.push_back(g);
-					colours.push_back(b);
-					colours.push_back(a);
+						for (int i = 0; i < 4; i++)
+						{
+							colours.push_back(r);
+							colours.push_back(g);
+							colours.push_back(b);
+							colours.push_back(a);
+						}
+					}
+
+					if (!(cull & CULL_DOWN))
+					{
+						const int indcs = vertices.size() / 3;
+
+						// 0,0,0
+						normals.push_back(0 + x);
+						normals.push_back(0 + _y);
+						normals.push_back(0 + z);
+						vertices.push_back(0 + x);
+						vertices.push_back(0 + _y);
+						vertices.push_back(0 + z);
+
+						// 1,0,0
+						normals.push_back(1 + x);
+						normals.push_back(0 + _y);
+						normals.push_back(0 + z);
+						vertices.push_back(1 + x);
+						vertices.push_back(0 + _y);
+						vertices.push_back(0 + z);
+
+						// 1,0,1
+						normals.push_back(1 + x);
+						normals.push_back(0 + _y);
+						normals.push_back(1 + z);
+						vertices.push_back(1 + x);
+						vertices.push_back(0 + _y);
+						vertices.push_back(1 + z);
+
+						// 0,0,1
+						normals.push_back(0 + x);
+						normals.push_back(0 + _y);
+						normals.push_back(1 + z);
+						vertices.push_back(0 + x);
+						vertices.push_back(0 + _y);
+						vertices.push_back(1 + z);
+
+						// 0,1,2,2,3,0
+						indices.push_back(0 + indcs);
+						indices.push_back(1 + indcs);
+						indices.push_back(2 + indcs);
+						indices.push_back(2 + indcs);
+						indices.push_back(3 + indcs);
+						indices.push_back(0 + indcs);
+
+						for (int i = 0; i < 4; i++)
+						{
+							colours.push_back(r);
+							colours.push_back(g);
+							colours.push_back(b);
+							colours.push_back(a);
+						}
+					}
 				}
 			}
 		}
 
-		Mesh mesh { };
+		Mesh mesh{};
 		mesh.vertexCount = vertices.size() / 3;
 		mesh.triangleCount = indices.size() / 3;
 		mesh.vertices = (float*)MemAlloc(vertices.size() * sizeof(float));
@@ -473,7 +524,7 @@ void Chunk::GenerateModel()
 	{
 		Subchunk& subchunk = subchunks[i];
 		subchunk.subchunk_model = LoadModelFromMesh(subchunk.subchunk_mesh);
-		subchunk.subchunk_mesh = Mesh { };
+		subchunk.subchunk_mesh = Mesh{};
 	}
 
 	has_model = true;
@@ -502,4 +553,43 @@ block_data& Chunk::GetBlock(Vector3 Relative)
 		z < 0 || z >= subchunk_size) return null_block;
 
 	return subchunks[y / subchunk_size].blocks[x][y % subchunk_size][z];
+}
+
+void Chunk::SetNeighbour(int x, int y, Chunk* c)
+{
+	if (x == 0 && y == 1) neighbours[0] = c; // N (+z)
+	else if (x == 0 && y == -1) neighbours[1] = c; // S (-z)
+	else if (x == 1 && y == 0) neighbours[2] = c; // E (+x)
+	else if (x == -1 && y == 0) neighbours[3] = c; // W (-x)
+}
+
+bool Chunk::IsSolidAt(int x, int y, int z)
+{
+	if (y < 0 || y >= subchunk_size * chunk_height_subchunks) return false;
+
+	if (x < 0)
+	{
+		if (!neighbours[3]) return false;
+		return neighbours[3]->IsSolidAt(x + subchunk_size, y, z);
+	}
+
+	if (x >= subchunk_size)
+	{
+		if (!neighbours[2]) return false;
+		return neighbours[2]->IsSolidAt(x - subchunk_size, y, z);
+	}
+
+	if (z < 0)
+	{
+		if (!neighbours[1]) return false;
+		return neighbours[1]->IsSolidAt(x, y, z + subchunk_size);
+	}
+
+	if (z >= subchunk_size)
+	{
+		if (!neighbours[0]) return false;
+		return neighbours[0]->IsSolidAt(x, y, z - subchunk_size);
+	}
+
+	return subchunks[y / subchunk_size].blocks[x][y % subchunk_size][z].type != BLOCK_AIR;
 }

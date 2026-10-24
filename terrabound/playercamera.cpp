@@ -56,12 +56,12 @@ void PlayerCamera::Update()
 	forward.y = std::sinf(pitch);
 	forward.z = std::cosf(pitch) * std::cosf(yaw);
 
-	// R_x = -sin(yaw)
+	// R_x = -cos(yaw)
 	// R_y = 0
-	// R_z = cos(yaw)
-	right.x = -std::sinf(yaw);
+	// R_z = sin(yaw)
+	right.x = -std::cosf(yaw);
 	right.y = 0;
-	right.z = std::cosf(yaw);
+	right.z = std::sinf(yaw);
 
 	// U_x = -sin(pitch) * sin(yaw)
 	// U_y = cos(pitch)
@@ -99,6 +99,17 @@ void PlayerCamera::SetPosition(Vector3 position)
 {
 	camera.position = position;
 	camera.target = Vector3Add(position, forward);
+}
+
+// Returns camera position
+Vector3 PlayerCamera::GetPosition()
+{
+	return camera.position;
+}
+
+int PlayerCamera::GetRenderDistanceChunks()
+{
+	return 4;
 }
 
 // Returns the native camera (Camera3D)

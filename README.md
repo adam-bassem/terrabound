@@ -11,6 +11,8 @@ Copyright © 2026 Adam Bassem & Alex. All rights reserved. Licensed under Apache
 
 ## Screenshots
 ![First Chunk Rendering](images/FirstChunk.png)
+![Generating terrain on a single chunk](images/ProperChunkGeneration.png)
+![World generation](images/WorldGeneration.png)
 
 ## Extra note
 Thanks for taking a moment to check out my project!
