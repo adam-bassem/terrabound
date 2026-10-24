@@ -13,9 +13,14 @@
 #pragma once
 
 #include "playercamera.hpp"
+#include "block.hpp"
+#include "raylib.h"
 
 namespace World
 {
 	void GenerateWorld();
 	void Render(PlayerCamera& camera);
+	block_data* GetBlock(Vector3 Global);
+	void BreakBlock(Vector3 Global);
+	void PlaceBlock(Vector3 Global);
 }

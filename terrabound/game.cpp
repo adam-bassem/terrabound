@@ -17,6 +17,7 @@
 #include "raymath.h"
 #include "world.hpp"
 #include "postprocessing.hpp"
+#include "ddaraycast.hpp"
 
 namespace
 {
@@ -57,12 +58,22 @@ int main()
 	{
 		BeginDrawing();
 
+		RaycastResult result = DDARaycast::DoRaycast(player_camera.GetPosition(), player_camera.Forward());
+
 		// Clear the frame to SKYBLUE colour
 		ClearBackground(SKYBLUE);
 
 		BeginMode3D(player_camera.GetNativeCamera());
 
 		World::Render(player_camera);
+
+		if (result.Hit && result.Distance <= 6)
+		{
+			Vector3 centre = { result.GlobalBlockPosition.x + 0.5f,
+							   result.GlobalBlockPosition.y + 0.5f,
+							   result.GlobalBlockPosition.z + 0.5f };
+			DrawCubeWires(centre, 1.01f, 1.01f, 1.01f, BLACK);
+		}
 
 		EndMode3D();
 
@@ -79,6 +90,22 @@ int main()
 		{
 			cursor_enabled ? DisableCursor() : EnableCursor();
 			cursor_enabled = !cursor_enabled;
+		}
+
+		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+		{
+			if (result.Hit && result.Distance <= 6)
+			{
+				World::BreakBlock(result.GlobalBlockPosition);
+			}
+		}
+
+		if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+		{
+			if (result.Hit && result.Distance <= 6)
+			{
+				World::PlaceBlock(result.FirstVector3AlongNormal);
+			}
 		}
 
 		Vector3 f = player_camera.Forward();

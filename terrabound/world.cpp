@@ -16,16 +16,63 @@
 #include <cmath>
 #include <map>
 #include <set>
-#include <future>
+#include <vector>
 #include <algorithm>
-#include <filesystem>
-#include <string>
+#include "raymath.h"
 
 namespace
 {
 	std::map<std::pair<int, int>, Chunk*> chunks;
 	std::set<std::pair<int, int>> to_remesh;
 	uint64_t seed;
+
+	// Chunk offsets inside the render circle, sorted nearest first. Built once per radius.
+	std::vector<std::pair<int, int>> load_order;
+	int load_order_radius = -1;
+
+	void BuildLoadOrder(int r)
+	{
+		load_order.clear();
+		for (int x = -r; x <= r; x++)
+		{
+			for (int z = -r; z <= r; z++)
+			{
+				if (x * x + z * z <= r * r) load_order.push_back({ x, z });
+			}
+		}
+
+		std::sort(load_order.begin(), load_order.end(), [](const auto& a, const auto& b)
+		{
+			return a.first * a.first + a.second * a.second < b.first * b.first + b.second * b.second;
+		});
+
+		load_order_radius = r;
+	}
+
+	// Creates the chunk at (x, z) if it doesn't exist yet. Returns true if one was created.
+	bool ProcessChunk(int x, int z)
+	{
+		if (chunks.count({ x, z })) return false;
+
+		Vector3 block_origin = { (float)(x * subchunk_size), 0, (float)(z * subchunk_size) };
+		Chunk* c = new Chunk(block_origin, seed);
+		chunks[{ x, z }] = c;
+
+		constexpr int dx[4] = { 0, 0, 1, -1 };
+		constexpr int dz[4] = { 1, -1, 0, 0 };
+
+		for (int i = 0; i < 4; i++)
+		{
+			auto it = chunks.find({ x + dx[i], z + dz[i] });
+			if (it == chunks.end() || !it->second) continue;
+
+			c->SetNeighbour(dx[i], dz[i], it->second);
+			it->second->SetNeighbour(-dx[i], -dz[i], c);
+			to_remesh.insert({ x + dx[i], z + dz[i] });
+		}
+		to_remesh.insert({ x, z });
+		return true;
+	}
 }
 
 void World::GenerateWorld()
@@ -47,39 +94,14 @@ void World::Render(PlayerCamera& camera)
 	constexpr int max_new_chunks = 1;
 	constexpr int max_remesh = 2;
 
-	auto inside = [&](int x, int z)
-		{
-			int a = (x - chunk_x) * (x - chunk_x);
-			int b = (z - chunk_z) * (z - chunk_z);
-			return a + b <= r * r;
-		};
+	if (r != load_order_radius) BuildLoadOrder(r);
 
-	// Pass 1: create and link new chunks, within budget
+	// Pass 1: create and link new chunks, nearest first, within budget
 	int created = 0;
-	for (int x = chunk_x - r; x <= chunk_x + r; x++)
+	for (const auto& offset : load_order)
 	{
-		for (int z = chunk_z - r; z <= chunk_z + r; z++)
-		{
-			if (!inside(x, z)) continue;
-
-			Chunk*& c = chunks[{ x, z }];
-			if (c || created >= max_new_chunks) continue;
-
-			created++;
-			Vector3 block_origin = { (float)(x * subchunk_size), 0, (float)(z * subchunk_size) };
-			c = new Chunk(block_origin, seed);
-
-			for (int i = 0; i < 4; i++)
-			{
-				auto it = chunks.find({ x + dx[i], z + dz[i] });
-				if (it == chunks.end() || !it->second) continue;
-
-				c->SetNeighbour(dx[i], dz[i], it->second);
-				it->second->SetNeighbour(-dx[i], -dz[i], c);
-				to_remesh.insert({ x + dx[i], z + dz[i] });
-			}
-			to_remesh.insert({ x, z });
-		}
+		if (created >= max_new_chunks) break;
+		if (ProcessChunk(chunk_x + offset.first, chunk_z + offset.second)) created++;
 	}
 
 	// Pass 2: remesh dirty chunks, within budget
@@ -97,22 +119,91 @@ void World::Render(PlayerCamera& camera)
 	}
 
 	// Pass 3: draw
-	for (int x = chunk_x - r; x <= chunk_x + r; x++)
+	for (const auto& offset : load_order)
 	{
-		for (int z = chunk_z - r; z <= chunk_z + r; z++)
+		const int x = chunk_x + offset.first;
+		const int z = chunk_z + offset.second;
+
+		auto found = chunks.find({ x, z });
+		if (found == chunks.end() || !found->second) continue;
+
+		Vector3 block_origin = { (float)(x * subchunk_size), 0, (float)(z * subchunk_size) };
+		for (int i = 0; i < chunk_height_subchunks; i++)
 		{
-			if (!inside(x, z)) continue;
-
-			auto found = chunks.find({ x, z });
-			if (found == chunks.end() || !found->second) continue;
-
-			Vector3 block_origin = { (float)(x * subchunk_size), 0, (float)(z * subchunk_size) };
-			for (int i = 0; i < chunk_height_subchunks; i++)
-			{
-				Model* model = found->second->GetModel(i);
-				if (!model) continue;
-				DrawModel(*model, block_origin, 1, WHITE);
-			}
+			Model* model = found->second->GetModel(i);
+			if (!model) continue;
+			DrawModel(*model, block_origin, 1, WHITE);
 		}
 	}
+}
+
+block_data* World::GetBlock(Vector3 Global)
+{
+	const int wx = (int)std::floor(Global.x);
+	const int wy = (int)std::floor(Global.y);
+	const int wz = (int)std::floor(Global.z);
+
+	if (wy < 0 || wy >= subchunk_size * chunk_height_subchunks) return nullptr;
+
+	const int cx = (int)std::floor(wx / (float)subchunk_size);
+	const int cz = (int)std::floor(wz / (float)subchunk_size);
+
+	auto found = chunks.find({ cx, cz });
+	if (found == chunks.end() || !found->second) return nullptr;
+
+	const int lx = wx - cx * subchunk_size;
+	const int lz = wz - cz * subchunk_size;
+	return &found->second->GetBlock({ (float)lx, (float)wy, (float)lz });
+}
+
+void World::BreakBlock(Vector3 Global)
+{
+	block_data* b = GetBlock(Global);
+	if (!b) return;
+
+	b->type = BLOCK_AIR;
+	b->state = (block_state)0;
+
+	const int wx = (int)std::floor(Global.x);
+	const int wy = (int)std::floor(Global.y);
+	const int wz = (int)std::floor(Global.z);
+
+	if (wy < 0 || wy >= subchunk_size * chunk_height_subchunks) return;
+
+	const int cx = (int)std::floor(wx / (float)subchunk_size);
+	const int cz = (int)std::floor(wz / (float)subchunk_size);
+
+	auto found = chunks.find({ cx, cz });
+	if (found == chunks.end() || !found->second) return;
+
+	const int lx = wx - cx * subchunk_size;
+	const int lz = wz - cz * subchunk_size;
+	found->second->GenerateMesh();
+	found->second->GenerateModel();
+}
+
+void World::PlaceBlock(Vector3 Global)
+{
+	block_data* b = GetBlock(Global);
+	if (!b) return;
+
+	b->type = BLOCK_STONE;
+	b->state = (block_state)0;
+
+	const int wx = (int)std::floor(Global.x);
+	const int wy = (int)std::floor(Global.y);
+	const int wz = (int)std::floor(Global.z);
+
+	if (wy < 0 || wy >= subchunk_size * chunk_height_subchunks) return;
+
+	const int cx = (int)std::floor(wx / (float)subchunk_size);
+	const int cz = (int)std::floor(wz / (float)subchunk_size);
+
+	auto found = chunks.find({ cx, cz });
+	if (found == chunks.end() || !found->second) return;
+
+	const int lx = wx - cx * subchunk_size;
+	const int lz = wz - cz * subchunk_size;
+	found->second->GenerateMesh();
+	found->second->GenerateModel();
 }

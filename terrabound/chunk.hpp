@@ -39,8 +39,7 @@ public:
 	Model* GetModel(int subchunk);
 
 	void SetNeighbour(int x, int y, Chunk* c);
-	bool IsSolidAt(int x, int y, int z);
-	float GetAO(int x, int y, int z, const int n[3], const int u[3], const int v[3], int su, int sv);
+	bool IsSolidAt(int x, int y, int z); 	float GetAO(int x, int y, int z, const int n[3], const int u[3], const int v[3], int su, int sv);
 
 private:
 	Vector3 Position;

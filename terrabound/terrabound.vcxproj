@@ -148,6 +148,7 @@
     <ClCompile Include="block.cpp" />
     <ClCompile Include="character.cpp" />
     <ClCompile Include="chunk.cpp" />
+    <ClCompile Include="ddaraycast.cpp" />
     <ClCompile Include="game.cpp" />
     <ClCompile Include="playercamera.cpp" />
     <ClCompile Include="postprocessing.cpp" />
@@ -160,6 +161,7 @@
     <ClInclude Include="block.hpp" />
     <ClInclude Include="character.hpp" />
     <ClInclude Include="chunk.hpp" />
+    <ClInclude Include="ddaraycast.hpp" />
     <ClInclude Include="FastNoiseLite.hpp" />
     <ClInclude Include="playercamera.hpp" />
     <ClInclude Include="postprocessing.hpp" />
