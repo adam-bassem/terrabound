@@ -17,6 +17,8 @@
 #include "raymath.h"
 #include "world.hpp"
 #include "rlgl.h"
+#include <iostream>
+#include <sstream>
 
 namespace
 {
@@ -47,6 +49,23 @@ int main()
 	SetExitKey(0);
 
 	World::GenerateWorld();
+
+
+
+	//Get the Working Directory
+	std::string workDir = GetApplicationDirectory();
+	//Get the Main Game Directory
+	std::string gameDir = "Terrabound";
+	//Full Game Directory Path
+	std::string combinedDir = workDir + gameDir;
+
+	std::cout << "Dir:" << combinedDir.c_str() << "\n";
+
+	//If this thing doesn't exist then we create it!
+	if (!DirectoryExists(gameDir.c_str())) {
+		MakeDirectory("Terrabound\0");
+		std::cout << "Created Directory: Terrabound!" << "\n";
+	}
 
 	// As long as the window is still open, keep looping
 	while (!WindowShouldClose())
@@ -105,9 +124,22 @@ int main()
 		}
 		DrawFPS(20, 40);
 
-		DrawText(TextFormat("Player XYZ %f, %f, %f", 2, 2, 2), )
+		DrawText(TextFormat("Player XYZ %f, %f, %f", player_camera.GetPosition().x, player_camera.GetPosition().y, player_camera.GetPosition().z), 22, 62, 30, DARKGREEN);
+		DrawText(TextFormat("Player XYZ %f, %f, %f", player_camera.GetPosition().x, player_camera.GetPosition().y, player_camera.GetPosition().z), 20, 60, 30, GREEN);
+		DrawText(TextFormat("World Seed: %i", World::getWorldSeed()), 20, 90, 30, PURPLE); //Display the World Seed
 
 		EndDrawing();
+	}
+
+
+	//Get the world seed and then write it to a file
+	std::string seed = TextFormat("%i", World::getWorldSeed());
+
+	if (!FileExists("seed.txt")) {
+		SaveFileText("seed.txt", seed.c_str());
+	}
+	else {
+		SaveFileText("seed.txt", seed.c_str());
 	}
 
 	// Finished program

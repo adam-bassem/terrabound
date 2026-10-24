@@ -109,7 +109,7 @@ Vector3 PlayerCamera::GetPosition()
 
 int PlayerCamera::GetRenderDistanceChunks()
 {
-	return 8;
+	return 16;
 }
 
 // Returns the native camera (Camera3D)

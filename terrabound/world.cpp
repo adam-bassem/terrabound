@@ -117,3 +117,7 @@ void World::Render(PlayerCamera& camera)
 		}
 	}
 }
+
+unsigned long long World::getWorldSeed() {
+	return seed;
+}

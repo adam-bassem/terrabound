@@ -29,6 +29,8 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 	heightmap.SetDomainWarpType(FastNoiseLite::DomainWarpType_OpenSimplex2);
 	heightmap.SetDomainWarpAmp(22.0f);
 
+	
+
 	for (int x = 0; x < subchunk_size; x++)
 		for (int z = 0; z < subchunk_size; z++)
 		{
