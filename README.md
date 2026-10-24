@@ -6,10 +6,13 @@
 [![Forks](https://img.shields.io/github/forks/adam-bassem/terrabound?style=for-the-badge&logo=github)](https://github.com/adam-bassem/terrabound/forks)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue?style=for-the-badge)](https://github.com/adam-bassem/terrabound/blob/main/LICENSE)
 
-### Copyright notice and license
+## Copyright notice and license
 Copyright © 2026 Adam Bassem & Alex. All rights reserved. Licensed under Apache 2.0.
 
-### Extra note
+## Screenshots
+![First Chunk Rendering](images/FirstChunk.png)
+
+## Extra note
 Thanks for taking a moment to check out my project!
 
 If you liked terrabound, don't forget to star the project.

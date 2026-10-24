@@ -2,7 +2,6 @@
  * =============================================================================
  * File        : playercamera.cpp
  * Author      : Adam Bassem
- * Created     : 23/10/2026
  *
  * Description :
  *     Player camera code

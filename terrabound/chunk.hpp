@@ -2,7 +2,6 @@
  * =============================================================================
  * File        : chunk.cpp
  * Author      : Adam Bassem
- * Created     : 23/10/2026
  *
  * Description :
  *     Chunk class, contains block data for full chunk, and mesh data

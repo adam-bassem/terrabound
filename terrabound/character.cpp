@@ -2,7 +2,6 @@
  * =============================================================================
  * File        : character.cpp
  * Author      : Adam Bassem
- * Created     : 23/10/2026
  *
  * Description :
  *     Character code (for player character only), handles movement of player

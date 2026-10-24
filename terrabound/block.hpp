@@ -2,7 +2,6 @@
  * =============================================================================
  * File        : block.hpp
  * Author      : Adam Bassem
- * Created     : 23/10/2026
  *
  * Description :
  *     Block struct, used by chunk code
