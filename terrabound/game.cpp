@@ -27,7 +27,7 @@ namespace
 	// Track if cursor is enabled or not
 	bool cursor_enabled;
 
-	Chunk chunk0_0_0(Vector3{ 0.0f, 0.0f, 0.0f });
+	Chunk* chunk0_0_0;
 }
 
 int main()
@@ -46,8 +46,9 @@ int main()
 	// quit from X button (TODO: make a quit menu button later)
 	SetExitKey(0);
 
-	chunk0_0_0.GenerateMesh();
-	chunk0_0_0.GenerateModel();
+	chunk0_0_0 = new Chunk(Vector3{ 0,0,0 });
+	chunk0_0_0->GenerateMesh();
+	chunk0_0_0->GenerateModel();
 
 	// As long as the window is still open, keep looping
 	while (!WindowShouldClose())
@@ -59,12 +60,14 @@ int main()
 
 		BeginMode3D(player_camera.GetNativeCamera());
 
-		for (int i = 0; i < chunk_height_subchunks; i++)
+		for (int i = 0; i < chunk_height_subchunks && chunk0_0_0; i++)
 		{
-			Model* model = chunk0_0_0.GetModel(i);
+			Model* model = chunk0_0_0->GetModel(i);
 			if (!model) continue;
 			DrawModel(*model, { 0, 0, 0 }, 1, WHITE);
 		}
+
+		DrawGrid(100, 10);
 
 		EndMode3D();
 
@@ -81,6 +84,15 @@ int main()
 		{
 			cursor_enabled ? DisableCursor() : EnableCursor();
 			cursor_enabled = !cursor_enabled;
+		}
+
+		// To test, regenrate the chunk if C is pressed
+		if (IsKeyPressed(KEY_C))
+		{
+			delete chunk0_0_0;
+			chunk0_0_0 = new Chunk(Vector3{ 0,0,0 });
+			chunk0_0_0->GenerateMesh();
+			chunk0_0_0->GenerateModel();
 		}
 
 		Vector3 f = player_camera.Forward();

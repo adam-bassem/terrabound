@@ -56,12 +56,12 @@ void PlayerCamera::Update()
 	forward.y = std::sinf(pitch);
 	forward.z = std::cosf(pitch) * std::cosf(yaw);
 
-	// R_x = cos(yaw)
+	// R_x = -sin(yaw)
 	// R_y = 0
-	// R_z = -sin(yaw)
-	right.x = std::cosf(yaw);
+	// R_z = cos(yaw)
+	right.x = -std::sinf(yaw);
 	right.y = 0;
-	right.z = -std::sinf(yaw);
+	right.z = std::cosf(yaw);
 
 	// U_x = -sin(pitch) * sin(yaw)
 	// U_y = cos(pitch)

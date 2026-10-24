@@ -21,8 +21,8 @@ constexpr int chunk_height_subchunks = 12;
 struct Subchunk
 {
 	block_data blocks[subchunk_size][subchunk_size][subchunk_size];
-	Mesh* subchunk_mesh;
-	Model subchunk_model;
+	Mesh subchunk_mesh { };
+	Model subchunk_model { };
 };
 
 class Chunk
@@ -40,5 +40,6 @@ public:
 private:
 	Vector3 Position;
 	Subchunk subchunks[chunk_height_subchunks];
-	bool has_mesh, has_model;
+	bool has_mesh = false;
+	bool has_model = false;
 };
