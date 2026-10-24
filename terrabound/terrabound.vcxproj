@@ -145,10 +145,12 @@
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="block.cpp" />
     <ClCompile Include="character.cpp" />
     <ClCompile Include="chunk.cpp" />
     <ClCompile Include="game.cpp" />
     <ClCompile Include="playercamera.cpp" />
+    <ClCompile Include="postprocessing.cpp" />
     <ClCompile Include="world.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -160,6 +162,7 @@
     <ClInclude Include="chunk.hpp" />
     <ClInclude Include="FastNoiseLite.hpp" />
     <ClInclude Include="playercamera.hpp" />
+    <ClInclude Include="postprocessing.hpp" />
     <ClInclude Include="world.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

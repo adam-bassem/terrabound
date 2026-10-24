@@ -10,9 +10,11 @@
 Copyright © 2026 Adam Bassem & Alex. All rights reserved. Licensed under Apache 2.0.
 
 ## Screenshots
-![First Chunk Rendering](images/FirstChunk.png)
-![Generating terrain on a single chunk](images/ProperChunkGeneration.png)
-![World generation](images/WorldGeneration.png)
+![First Chunk Rendering](images/1.FirstChunk.png)
+![Generating terrain on a single chunk](images/2.ProperChunkGeneration.png)
+![World generation](images/3.WorldGeneration.png)
+![Proper world generation and block types](images/4.ProperWorldGenerationAndBlockTypes.png)
+![Ambient Occlusion](images/5.AmbientOcclusion.png)
 
 ## Extra note
 Thanks for taking a moment to check out my project!

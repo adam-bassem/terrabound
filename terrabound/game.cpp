@@ -16,6 +16,7 @@
 #include "chunk.hpp"
 #include "raymath.h"
 #include "world.hpp"
+#include "postprocessing.hpp"
 
 namespace
 {
@@ -45,6 +46,10 @@ int main()
 	// quit from X button (TODO: make a quit menu button later)
 	SetExitKey(0);
 
+	// Create terrain shader
+	PostProcessing::InitialiseTerrain();
+
+	// Create the world
 	World::GenerateWorld();
 
 	// As long as the window is still open, keep looping
@@ -58,8 +63,6 @@ int main()
 		BeginMode3D(player_camera.GetNativeCamera());
 
 		World::Render(player_camera);
-
-		DrawGrid(100, 10);
 
 		EndMode3D();
 

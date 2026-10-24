@@ -21,7 +21,7 @@ constexpr int chunk_height_subchunks = 12;
 
 struct Subchunk
 {
-	block_data blocks[subchunk_size][subchunk_size][subchunk_size];
+	block_data blocks[subchunk_size][subchunk_size][subchunk_size] { };
 	Mesh subchunk_mesh { };
 	Model subchunk_model { };
 };
@@ -40,6 +40,7 @@ public:
 
 	void SetNeighbour(int x, int y, Chunk* c);
 	bool IsSolidAt(int x, int y, int z);
+	float GetAO(int x, int y, int z, const int n[3], const int u[3], const int v[3], int su, int sv);
 
 private:
 	Vector3 Position;

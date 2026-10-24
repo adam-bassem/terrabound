@@ -4,7 +4,7 @@
  * Author      : Adam Bassem
  *
  * Description :
- *     World contains 20x20 chunks (temporarily, later will expand to an infinite world)
+ *     World code
  *
  * Copyright © 2026 Adam Bassem & Alex. All rights reserved. Licensed under Apache 2.0.
  * ============================================================================

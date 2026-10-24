@@ -1,5 +1,5 @@
 /*
- * ============================================================================
+ * =============================================================================
  * File        : chunk.cpp
  * Author      : Adam Bassem
  *
@@ -7,19 +7,20 @@
  *     Chunk class, contains block data for full chunk, and mesh data and generation
  *
  * Copyright © 2026 Adam Bassem & Alex. All rights reserved. Licensed under Apache 2.0.
- * ============================================================================
+ * =============================================================================
  */
 
 #include "chunk.hpp"
 #include <vector>
 #include "FastNoiseLite.hpp"
 #include <algorithm>
+#include "postprocessing.hpp"
 
 Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 {
 	FastNoiseLite heightmap;
 	heightmap.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-	heightmap.SetSeed(seed);
+	heightmap.SetSeed((int)seed);
 	heightmap.SetFrequency(0.005f);
 	heightmap.SetFractalType(FastNoiseLite::FractalType_FBm);
 	heightmap.SetFractalOctaves(8);
@@ -29,24 +30,72 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 	heightmap.SetDomainWarpType(FastNoiseLite::DomainWarpType_OpenSimplex2);
 	heightmap.SetDomainWarpAmp(22.0f);
 
+	FastNoiseLite cave_a_spag;
+	cave_a_spag.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+	cave_a_spag.SetSeed((int)seed);
+	cave_a_spag.SetFrequency(0.03f);
+	cave_a_spag.SetFractalType(FastNoiseLite::FractalType_None);
+
+	FastNoiseLite cave_b_spag;
+	cave_b_spag.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+	cave_b_spag.SetSeed((int)seed + 1337);
+	cave_b_spag.SetFrequency(0.03f);
+	cave_b_spag.SetFractalType(FastNoiseLite::FractalType_None);
+
+	constexpr float terrain_base = 96.0f;
+	constexpr float terrain_amp = 120.0f;
+	constexpr float cave_threshold = 0.08f;
+
+	int heightmap_heights[subchunk_size][subchunk_size];
+
+	// Pass 0: heightmap
 	for (int x = 0; x < subchunk_size; x++)
+	{
 		for (int z = 0; z < subchunk_size; z++)
 		{
-			constexpr float terrain_base = 96.0f;
-			constexpr float terrain_amp = 120.0f;
-
 			float n = heightmap.GetNoise(position.x + x, position.z + z);
-			float h = std::tanh(n * 2.0f) * 0.5f + 0.5f;
-			h = std::pow(h, 1.5f);
-			int height = (int)(terrain_base + h * terrain_amp);
+			float h = std::pow(std::tanh(n * 2.0f) * 0.5f + 0.5f, 1.5f);
+			heightmap_heights[x][z] = (int)(terrain_base + h * terrain_amp);
+		}
+	}
 
-			for (int y = 0; y < height; y++)
+	// Pass 1: fill layers and carve caves in one walk over each column
+	for (int x = 0; x < subchunk_size; x++)
+	{
+		for (int z = 0; z < subchunk_size; z++)
+		{
+			const int top = heightmap_heights[x][z];
+			const float wx = position.x + x;
+			const float wz = position.z + z;
+
+			for (int y = 0; y < top; y++)
 			{
-				block_data& b = GetBlock({ (float)x, (float)y, (float)z });
-				b.type = BLOCK_FILLED;
+				block_data& b = subchunks[y / subchunk_size].blocks[x][y % subchunk_size][z];
+
+				if (y == top - 1)
+				{
+					b.type = BLOCK_GRASS;
+				}
+				else if (y >= top - 4)
+				{
+					b.type = BLOCK_DIRT;
+				}
+				else
+				{
+					b.type = BLOCK_STONE;
+				}
 				b.state = (block_state)GetRandomValue(0, 2);
+
+				if (y < 1 || y > top - 5) continue;
+
+				const float fy = (float)y;
+				if (fabsf(cave_a_spag.GetNoise(wx, fy, wz)) >= cave_threshold) continue;
+				if (fabsf(cave_b_spag.GetNoise(wx, fy, wz)) >= cave_threshold) continue;
+
+				b.type = BLOCK_AIR;
 			}
 		}
+	}
 }
 
 static void ReleaseSubchunk(Subchunk& subchunk)
@@ -68,10 +117,10 @@ Chunk::~Chunk()
 
 #define CULL_NORTH 0b00000001
 #define CULL_SOUTH 0b00000010
-#define CULL_EAST  0b00000100
-#define CULL_WEST  0b00001000
-#define CULL_UP    0b00010000
-#define CULL_DOWN  0b00100000
+#define CULL_EAST 0b00000100
+#define CULL_WEST 0b00001000
+#define CULL_UP 0b00010000
+#define CULL_DOWN 0b00100000
 
 void Chunk::GenerateMesh()
 {
@@ -86,7 +135,7 @@ void Chunk::GenerateMesh()
 		std::vector<float> vertices;
 		std::vector<unsigned char> colours;
 		std::vector<float> normals;
-		std::vector<unsigned short> indices;
+		std::vector<unsigned int> indices;
 
 		Subchunk& subchunk = subchunks[subchunk_i];
 
@@ -100,42 +149,12 @@ void Chunk::GenerateMesh()
 					if (this_block.type == BLOCK_AIR) continue;
 					uint8_t cull = 0;
 
-					uint8_t r = 0xFF, g = 0xFF, b = 0xFF, a = 0xFF;
-
-					switch (this_block.state)
-					{
-					case BLOCK_RED:
-					{
-						r = 0xFF;
-						g = 0x00;
-						b = 0x00;
-						a = 0xFF;
-						break;
-					}
-
-					case BLOCK_GREEN:
-					{
-						r = 0x00;
-						g = 0xFF;
-						b = 0x00;
-						a = 0xFF;
-						break;
-					}
-
-					case BLOCK_BLUE:
-					{
-						r = 0x00;
-						g = 0x00;
-						b = 0xFF;
-						a = 0xFF;
-						break;
-					}
-
-					default:
-					{
-						break;
-					}
-					}
+					uint32_t colour = Block::GetColour(this_block);
+					// 0xAARRGGBB
+					uint8_t a = (colour >> 24) & 0xFF;
+					uint8_t r = (colour >> 16) & 0xFF;
+					uint8_t g = (colour >> 8) & 0xFF;
+					uint8_t b = colour & 0xFF;
 
 					int _y = y + (subchunk_size * subchunk_i);
 
@@ -213,12 +232,22 @@ void Chunk::GenerateMesh()
 						indices.push_back(3 + indcs);
 						indices.push_back(0 + indcs);
 
+						constexpr int n[3] = { 0, 0, 1 };
+						constexpr int u[3] = { 1, 0, 0 };
+						constexpr int v[3] = { 0, 1, 0 };
+
+						const float ao[4] = {
+							GetAO(x, _y, z, n, u, v, -1, -1),
+							GetAO(x, _y, z, n, u, v, 1, -1),
+							GetAO(x, _y, z, n, u, v, 1, 1),
+							GetAO(x, _y, z, n, u, v, -1, 1),
+						};
 						for (int i = 0; i < 4; i++)
 						{
 							colours.push_back(r);
 							colours.push_back(g);
 							colours.push_back(b);
-							colours.push_back(a);
+							colours.push_back((unsigned char)(ao[i] * 255.0f));
 						}
 					}
 
@@ -266,12 +295,22 @@ void Chunk::GenerateMesh()
 						indices.push_back(1 + indcs);
 						indices.push_back(0 + indcs);
 
+						constexpr int n[3] = { 0, 0, -1 };
+						constexpr int u[3] = { 1, 0, 0 };
+						constexpr int v[3] = { 0, 1, 0 };
+
+						const float ao[4] = {
+							GetAO(x, _y, z, n, u, v, -1, -1),
+							GetAO(x, _y, z, n, u, v, 1, -1),
+							GetAO(x, _y, z, n, u, v, 1, 1),
+							GetAO(x, _y, z, n, u, v, -1, 1),
+						};
 						for (int i = 0; i < 4; i++)
 						{
 							colours.push_back(r);
 							colours.push_back(g);
 							colours.push_back(b);
-							colours.push_back(a);
+							colours.push_back((unsigned char)(ao[i] * 255.0f));
 						}
 					}
 
@@ -319,12 +358,22 @@ void Chunk::GenerateMesh()
 						indices.push_back(1 + indcs);
 						indices.push_back(0 + indcs);
 
+						constexpr int n[3] = { 1, 0, 0 };
+						constexpr int u[3] = { 0, 0, 1 };
+						constexpr int v[3] = { 0, 1, 0 };
+
+						const float ao[4] = {
+							GetAO(x, _y, z, n, u, v, -1, -1),
+							GetAO(x, _y, z, n, u, v, 1, -1),
+							GetAO(x, _y, z, n, u, v, 1, 1),
+							GetAO(x, _y, z, n, u, v, -1, 1),
+						};
 						for (int i = 0; i < 4; i++)
 						{
 							colours.push_back(r);
 							colours.push_back(g);
 							colours.push_back(b);
-							colours.push_back(a);
+							colours.push_back((unsigned char)(ao[i] * 255.0f));
 						}
 					}
 
@@ -372,12 +421,22 @@ void Chunk::GenerateMesh()
 						indices.push_back(3 + indcs);
 						indices.push_back(0 + indcs);
 
+						constexpr int n[3] = { -1, 0, 0 };
+						constexpr int u[3] = { 0, 0, 1 };
+						constexpr int v[3] = { 0, 1, 0 };
+
+						const float ao[4] = {
+							GetAO(x, _y, z, n, u, v, -1, -1),
+							GetAO(x, _y, z, n, u, v, 1, -1),
+							GetAO(x, _y, z, n, u, v, 1, 1),
+							GetAO(x, _y, z, n, u, v, -1, 1),
+						};
 						for (int i = 0; i < 4; i++)
 						{
 							colours.push_back(r);
 							colours.push_back(g);
 							colours.push_back(b);
-							colours.push_back(a);
+							colours.push_back((unsigned char)(ao[i] * 255.0f));
 						}
 					}
 
@@ -425,12 +484,22 @@ void Chunk::GenerateMesh()
 						indices.push_back(3 + indcs);
 						indices.push_back(0 + indcs);
 
+						constexpr int n[3] = { 0, 1, 0 };
+						constexpr int u[3] = { 1, 0, 0 };
+						constexpr int v[3] = { 0, 0, 1 };
+
+						const float ao[4] = {
+							GetAO(x, _y, z, n, u, v, -1, -1),
+							GetAO(x, _y, z, n, u, v, -1, 1),
+							GetAO(x, _y, z, n, u, v, 1, 1),
+							GetAO(x, _y, z, n, u, v, 1, -1),
+						};
 						for (int i = 0; i < 4; i++)
 						{
 							colours.push_back(r);
 							colours.push_back(g);
 							colours.push_back(b);
-							colours.push_back(a);
+							colours.push_back((unsigned char)(ao[i] * 255.0f));
 						}
 					}
 
@@ -478,12 +547,22 @@ void Chunk::GenerateMesh()
 						indices.push_back(3 + indcs);
 						indices.push_back(0 + indcs);
 
+						constexpr int n[3] = { 0, -1, 0 };
+						constexpr int u[3] = { 1, 0, 0 };
+						constexpr int v[3] = { 0, 0, 1 };
+
+						const float ao[4] = {
+							GetAO(x, _y, z, n, u, v, -1, -1),
+							GetAO(x, _y, z, n, u, v, 1, -1),
+							GetAO(x, _y, z, n, u, v, 1, 1),
+							GetAO(x, _y, z, n, u, v, -1, 1),
+						};
 						for (int i = 0; i < 4; i++)
 						{
 							colours.push_back(r);
 							colours.push_back(g);
 							colours.push_back(b);
-							colours.push_back(a);
+							colours.push_back((unsigned char)(ao[i] * 255.0f));
 						}
 					}
 				}
@@ -491,17 +570,26 @@ void Chunk::GenerateMesh()
 		}
 
 		Mesh mesh{};
-		mesh.vertexCount = vertices.size() / 3;
-		mesh.triangleCount = indices.size() / 3;
-		mesh.vertices = (float*)MemAlloc(vertices.size() * sizeof(float));
-		mesh.normals = (float*)MemAlloc(normals.size() * sizeof(float));
-		mesh.colors = (unsigned char*)MemAlloc(colours.size() * sizeof(unsigned char));
-		mesh.indices = (unsigned short*)MemAlloc(indices.size() * sizeof(unsigned short));
+		mesh.vertexCount = (int)indices.size();
+		mesh.triangleCount = (int)indices.size() / 3;
+		mesh.vertices = (float*)MemAlloc(indices.size() * 3 * sizeof(float));
+		mesh.normals = (float*)MemAlloc(indices.size() * 3 * sizeof(float));
+		mesh.colors = (unsigned char*)MemAlloc(indices.size() * 4 * sizeof(unsigned char));
+		mesh.indices = nullptr;
 
-		std::copy(vertices.begin(), vertices.end(), mesh.vertices);
-		std::copy(normals.begin(), normals.end(), mesh.normals);
-		std::copy(colours.begin(), colours.end(), mesh.colors);
-		std::copy(indices.begin(), indices.end(), mesh.indices);
+		for (size_t i = 0; i < indices.size(); i++)
+		{
+			const unsigned int k = indices[i];
+			for (int c = 0; c < 3; c++)
+			{
+				mesh.vertices[i * 3 + c] = vertices[k * 3 + c];
+				mesh.normals[i * 3 + c] = normals[k * 3 + c];
+			}
+			for (int c = 0; c < 4; c++)
+			{
+				mesh.colors[i * 4 + c] = colours[k * 4 + c];
+			}
+		}
 
 		vertices.clear();
 		indices.clear();
@@ -523,8 +611,11 @@ void Chunk::GenerateModel()
 	for (int i = 0; i < chunk_height_subchunks; i++)
 	{
 		Subchunk& subchunk = subchunks[i];
+		if (subchunk.subchunk_mesh.vertexCount == 0) continue;
+
 		subchunk.subchunk_model = LoadModelFromMesh(subchunk.subchunk_mesh);
 		subchunk.subchunk_mesh = Mesh{};
+		subchunk.subchunk_model.materials[0].shader = PostProcessing::GetTerrainShader();
 	}
 
 	has_model = true;
@@ -592,4 +683,24 @@ bool Chunk::IsSolidAt(int x, int y, int z)
 	}
 
 	return subchunks[y / subchunk_size].blocks[x][y % subchunk_size][z].type != BLOCK_AIR;
+}
+
+float Chunk::GetAO(int x, int y, int z, const int n[3], const int u[3], const int v[3], int su, int sv)
+{
+	const int fx = x + n[0];
+	const int fy = y + n[1];
+	const int fz = z + n[2];
+
+	const bool side1 = IsSolidAt(fx + u[0] * su, fy + u[1] * su, fz + u[2] * su);
+	const bool side2 = IsSolidAt(fx + v[0] * sv, fy + v[1] * sv, fz + v[2] * sv);
+	const bool corner = IsSolidAt(fx + u[0] * su + v[0] * sv,
+		fy + u[1] * su + v[1] * sv,
+		fz + u[2] * su + v[2] * sv);
+
+	int level;
+	if (side1 && side2) level = 3;
+	else level = (int)side1 + (int)side2 + (int)corner;
+
+	constexpr float table[4] = { 1.0f, 0.8f, 0.65f, 0.5f };
+	return table[level];
 }

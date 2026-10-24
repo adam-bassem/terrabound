@@ -4,8 +4,7 @@
  * Author      : Adam Bassem
  *
  * Description :
- *     World contains chunks around the camera, unloading far chunks to disk.
- *     New chunks are generated on a background thread.
+ *     World code
  *
  * Copyright © 2026 Adam Bassem & Alex. All rights reserved. Licensed under Apache 2.0.
  * ============================================================================

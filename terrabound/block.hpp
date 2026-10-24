@@ -12,10 +12,14 @@
 
 #pragma once
 
+#include <cstdint>
+
 enum block_type
 {
 	BLOCK_AIR,
-	BLOCK_FILLED, // Temporary, later add actual blocks
+	BLOCK_GRASS,
+	BLOCK_DIRT,
+	BLOCK_STONE,
 };
 
 // test states for filled block,
@@ -33,3 +37,7 @@ struct block_data
 	block_state state;
 };
 
+namespace Block
+{
+	uint32_t GetColour(block_data data);
+}
