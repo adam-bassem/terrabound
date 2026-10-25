@@ -11,6 +11,11 @@
  */
 
 #include "block.hpp"
+#include "raymath.h"
+#include <iostream>
+
+static float u[24];
+static float v[24];
 
 uint32_t Block::GetColour(block_data data)
 {
@@ -59,6 +64,464 @@ uint32_t Block::GetColour(block_data data)
 		default:
 		{
 			return 0xFF8889B8;
+		}
+	}
+}
+
+
+
+
+void Block::getTileTextures(block_data &data) {
+	switch (data.type) {
+
+
+
+	case BLOCK_DIRT : {
+		//North
+					//bottom left corner
+		u[0] = 0.125f;
+		v[0] = 0.0625;
+		//bottom right corner
+		u[1] = 0.1875;
+		v[1] = 0.0625;
+		//top right corner
+		u[2] = 0.1875;
+		v[2] = 0.00390625f;
+		//top left corner
+		u[3] = 0.125f;
+		v[3] = 0.00390625f;
+
+		//South
+		//bottom left corner
+		u[4] = u[0];
+		v[4] = v[0];
+		//bottom right corner
+		u[5] = u[1];
+		v[5] = v[1];
+		//top right corner
+		u[6] = u[2];
+		v[6] = v[2];
+		//top left corner
+		u[7] = u[3];
+		v[7] = v[3];
+
+		//East
+		//bottom left corner 
+		u[8] = u[0];
+		v[8] = v[0];
+		//bottom right corner
+		u[9] = u[1];
+		v[9] = v[1];
+		//top right corner
+		u[10] = u[2];
+		v[10] = v[2];
+		//top left corner
+		u[11] = u[3];
+		v[11] = v[3];
+
+		//West
+		//bottom left corner
+		u[12] = u[0];
+		v[12] = v[0];
+		//bottom right corner
+		u[13] = u[1];
+		v[13] = v[1];
+		//top right corner
+		u[14] = u[2];
+		v[14] = v[2];
+		//top left corner
+		u[15] = u[3];
+		v[15] = v[3];
+
+		//Up Face
+		//bottom left corner
+		u[16] = u[0];
+		v[16] = v[0];
+		//bottom right corner
+		u[17] = u[1];
+		v[17] = v[1];
+		//top right corner
+		u[18] = u[2];
+		v[18] = v[2];
+		//top left corner
+		u[19] = u[3];
+		v[19] = v[3];
+
+		//Down face
+		//bottom left corner
+		u[20] = u[0];
+		v[20] = v[0];
+		//bottom right corner
+		u[21] = u[1];
+		v[21] = v[1];
+		//top right corner
+		u[22] = u[2];
+		v[22] = v[2];
+		//top left corner
+		u[23] = u[3];
+		v[23] = v[3];
+		//std::cout << "Dirt Block!" << "\n";
+		break;
+	}
+
+	case BLOCK_STONE : {
+		//North
+		//bottom left corner
+		u[0] = 0.1875;
+		v[0] = 0.0625f;
+		//bottom right corner
+		u[1] = 0.25;
+		v[1] = 0.0625f;
+		//top right corner
+		u[2] = 0.25;
+		v[2] = 0.00390625f;
+		//top left corner
+		u[3] = 0.1875;
+		v[3] = 0.00390625f;
+
+		//South
+		//bottom left corner
+		u[4] = u[0];
+		v[4] = v[0];
+		//bottom right corner
+		u[5] = u[1];
+		v[5] = v[1];
+		//top right corner
+		u[6] = u[2];
+		v[6] = v[2];
+		//top left corner
+		u[7] = u[3];
+		v[7] = v[3];
+
+		//East
+		//bottom left corner 
+		u[8] = u[0];
+		v[8] = v[0];
+		//bottom right corner
+		u[9] = u[1];
+		v[9] = v[1];
+		//top right corner
+		u[10] = u[2];
+		v[10] = v[2];
+		//top left corner
+		u[11] = u[3];
+		v[11] = v[3];
+
+		//West
+		//bottom left corner
+		u[12] = u[0];
+		v[12] = v[0];
+		//bottom right corner
+		u[13] = u[1];
+		v[13] = v[1];
+		//top right corner
+		u[14] = u[2];
+		v[14] = v[2];
+		//top left corner
+		u[15] = u[3];
+		v[15] = v[3];
+
+		//Up Face
+		//bottom left corner
+		u[16] = u[0];
+		v[16] = v[0];
+		//bottom right corner
+		u[17] = u[1];
+		v[17] = v[1];
+		//top right corner
+		u[18] = u[2];
+		v[18] = v[2];
+		//top left corner
+		u[19] = u[3];
+		v[19] = v[3];
+
+		//Down face
+		//bottom left corner
+		u[20] = u[0];
+		v[20] = v[0];
+		//bottom right corner
+		u[21] = u[1];
+		v[21] = v[1];
+		//top right corner
+		u[22] = u[2];
+		v[22] = v[2];
+		//top left corner
+		u[23] = u[3];
+		v[23] = v[3];
+		//std::cout << "Stone Block!" << "\n";
+		break;
+	}
+
+
+	//REMEMBER to start from 0.00390625f, (pixel 0, 0) then multiply this value by how far your texture starts and ends in pixels
+	case BLOCK_WOOD_LOG : {
+		//North
+			//bottom left corner
+		u[0] = 0.375f;
+		v[0] = 0.0625f;
+		//bottom right corner
+		u[1] = 0.4375f;
+		v[1] = 0.0625f;
+		//top right corner
+		u[2] = 0.4375f;
+		v[2] = 0.00390625f;
+		//top left corner
+		u[3] = 0.375f;
+		v[3] = 0.00390625f;
+
+		//South
+		u[4] = u[0];
+		v[4] = v[0];
+
+		u[5] = u[1];
+		v[5] = v[1];
+
+		u[6] = u[2];
+		v[6] = v[2];
+		//top left corner
+		u[7] = u[3];
+		v[7] = v[3];
+
+		//East
+		u[8] = u[0];
+		v[8] = v[0];
+
+		u[9] = u[1];
+		v[9] = v[1];
+
+		u[10] = u[2];
+		v[10] = v[2];
+		//top left corner
+		u[11] = u[3];
+		v[11] = v[3];
+
+		//West
+		u[12] = u[0];
+		v[12] = v[0];
+
+		u[13] = u[1];
+		v[13] = v[1];
+
+		u[14] = u[2];
+		v[14] = v[2];
+		//top left corner
+		u[15] = u[3];
+		v[15] = v[3];
+
+		//Up Face
+		//bottom left
+		u[16] = 0.4375f; //0.00390625f
+		v[16] = 0.0625f;
+		//bottom right
+		u[17] = 0.49609375f;
+		v[17] = 0.0625f;
+		//top right
+		u[18] = 0.49609375f;
+		v[18] = 0.00390625f;
+		//top left corner
+		u[19] = 0.4375f;
+		v[19] = 0.00390625f;
+
+		//Down face
+
+		u[20] = u[16];
+		v[20] = v[16];
+
+		u[21] = u[17];
+		v[21] = v[17];
+		//top right
+		u[22] = u[18];
+		v[22] = v[18];
+		//top left corner
+		u[23] = u[19];
+		v[23] = v[19];
+	//	std::cout << "Wood Block!" << "\n";
+		break;
+	}
+
+	case BLOCK_TREE_LEAVES : {
+		//North
+		//bottom left corner
+		u[0] = 0.5f;
+		v[0] = 0.0625f;
+		//bottom right corner //0.00390625f
+		u[1] = 0.5625f;
+		v[1] = 0.0625f;
+		//top right corner
+		u[2] = 0.5625f;
+		v[2] = 0.00390625f;
+		//top left corner
+		u[3] = 0.5f;
+		v[3] = 0.00390625f;
+
+		//South
+		//bottom left corner
+		u[4] = u[0];
+		v[4] = v[0];
+		//bottom right corner
+		u[5] = u[1];
+		v[5] = v[1];
+		//top right corner
+		u[6] = u[2];
+		v[6] = v[2];
+		//top left corner
+		u[7] = u[3];
+		v[7] = v[3];
+
+		//East
+		//bottom left corner 
+		u[8] = u[0];
+		v[8] = v[0];
+		//bottom right corner
+		u[9] = u[1];
+		v[9] = v[1];
+		//top right corner
+		u[10] = u[2];
+		v[10] = v[2];
+		//top left corner
+		u[11] = u[3];
+		v[11] = v[3];
+
+		//West
+		//bottom left corner
+		u[12] = u[0];
+		v[12] = v[0];
+		//bottom right corner
+		u[13] = u[1];
+		v[13] = v[1];
+		//top right corner
+		u[14] = u[2];
+		v[14] = v[2];
+		//top left corner
+		u[15] = u[3];
+		v[15] = v[3];
+
+		//Up Face
+		//bottom left corner
+		u[16] = u[0];
+		v[16] = v[0];
+		//bottom right corner
+		u[17] = u[1];
+		v[17] = v[1];
+		//top right corner
+		u[18] = u[2];
+		v[18] = v[2];
+		//top left corner
+		u[19] = u[3];
+		v[19] = v[3];
+
+		//Down face
+		//bottom left corner
+		u[20] = u[0];
+		v[20] = v[0];
+		//bottom right corner
+		u[21] = u[1];
+		v[21] = v[1];
+		//top right corner
+		u[22] = u[2];
+		v[22] = v[2];
+		//top left corner
+		u[23] = u[3];
+		v[23] = v[3];
+		//std::cout << "Leaves Block!" << "\n";
+		break;
+	}
+
+	case BLOCK_BUSH_LEAVES : {
+		//break;
+	}
+
+	case BLOCK_GRASS: {
+		//North
+		//bottom left corner
+		u[0] = 0.0625f;
+		v[0] = 0.0625f;
+		//bottom right corner
+		u[1] = 0.125f;
+		v[1] = 0.0625f;
+		//top right corner
+		u[2] = 0.125f;
+		v[2] = 0.00390625f;
+		//top left corner
+		u[3] = 0.0625f;
+		v[3] = 0.00390625f;
+
+
+		//South
+		u[4] = u[0];
+		v[4] = v[0];
+
+		u[5] = u[1];
+		v[5] = v[1];
+
+		u[6] = u[2];
+		v[6] = v[2];
+		//top left corner
+		u[7] = u[3];
+		v[7] = v[3];
+
+		//East
+		u[8] = u[0];
+		v[8] = v[0];
+
+		u[9] = u[1];
+		v[9] = v[1];
+
+		u[10] = u[2];
+		v[10] = v[2];
+		//top left corner
+		u[11] = u[3];
+		v[11] = v[3];
+
+		//West
+		u[12] = u[0];
+		v[12] = v[0];
+
+		u[13] = u[1];
+		v[13] = v[1];
+
+		u[14] = u[2];
+		v[14] = v[2];
+		//top left corner
+		u[15] = u[3];
+		v[15] = v[3];
+
+		//Up Face
+		u[16] = 0.00390625f;
+		v[16] = 0.00390625f;
+
+		u[17] = 0.0625;
+		v[17] = 0.00390625f;
+
+		u[18] = 0.0625;
+		v[18] = 0.0625;
+		//top left corner
+		u[19] = 0.00390625f;
+		v[19] = 0.0625;
+
+		//Down face
+
+		u[20] = 0.125f;
+		v[20] = 0.0625f;
+
+		u[21] = 0.1875f;
+		v[21] = 0.0625f;
+		//top right
+		u[22] = 0.1875;
+		v[22] = 0.00390625f;
+		//top left corner
+		u[23] = 0.125f;
+		v[23] = 0.00390625f;
+		//	std::cout << "Grass Block!" << "\n";
+		break;
+	}
+
+	case BLOCK_SHORT_GRASS : {
+		//break;
+	}
+
+	default : {
+		break;
 		}
 	}
 }
@@ -157,6 +620,32 @@ static block_mesh Block::CubeBlock()
 		{ 0,1,2, 2,3,0 }, // down
 	};
 
+	//REMEMBER to start from 0.00390625f, (pixel 0, 0) then multiply this value by how far your texture starts and ends in pixels
+
+	float texCoordsExpr[6][4][2] = {
+		{ {u[0], v[0]}, {u[1], v[1]}, {u[2], v[2]}, {u[3], v[3]}}, //North
+		{ {u[4], v[4]}, {u[5], v[5]}, {u[6], v[6]}, {u[7], v[7]}}, //East
+		{ {u[8], v[8]}, {u[9], v[9]}, {u[10], v[10]}, {u[11], v[11]}}, //West
+		{ {u[12], v[12]}, {u[13], v[13]}, {u[14], v[14]}, {u[15], v[15]}}, //South
+		{ {u[16], v[16]}, {u[17], v[17]}, {u[18], v[18]}, {u[19], v[19]}}, //Up
+		{ {u[20], v[20]}, {u[21], v[21]}, {u[22], v[22]}, {u[23], v[23]}} //Down
+
+		//{ { 0.1875, 0.0625f }, {0.25f, 0.0625f}, {0.25f, 0.00390625f}, {0.1875f, 0.00390625f} }, //North
+		//{ {0.1875, 0.0625f}, {0.25f, 0.0625f}, {0.25f, 0.00390625f}, {0.1875f, 0.00390625f} }, //East
+		//{ {0.1875, 0.0625f}, {0.25f, 0.0625f}, {0.25f, 0.00390625f}, {0.1875f, 0.00390625f} }, //West
+		//{ {0.1875, 0.0625f}, {0.25f, 0.0625f}, {0.25f, 0.00390625f}, {0.1875f, 0.00390625f} }, //South
+		//{ {0.1875, 0.0625f}, {0.25f, 0.0625f}, {0.25f, 0.00390625f}, {0.1875f, 0.00390625f} }, //Up
+		//{ {0.1875, 0.0625f}, {0.25f, 0.0625f}, {0.25f, 0.00390625f}, {0.1875f, 0.00390625f} } //Down
+
+		//{ {0, 0}, {1, 0}, {1, 1}, {0, 1} }, //North
+		//{ {0, 0}, {1, 0}, {1, 1}, {0, 1} }, //East
+		//{ {0, 0}, {1, 0}, {1, 1}, {0, 1} }, //West
+		//{ {0, 0}, {1, 0}, {1, 1}, {0, 1} }, //South
+		//{ {0, 0}, {1, 0}, {1, 1}, {0, 1} }, //Up
+		//{ {0, 0}, {1, 0}, {1, 1}, {0, 1} } //Down
+	};
+	
+
 	for (int f = 0; f < 6; f++)
 	{
 		const unsigned int base = mesh.vertices.size() / 3;
@@ -168,6 +657,10 @@ static block_mesh Block::CubeBlock()
 				mesh.vertices.push_back(corners[f][v][c]);
 				mesh.normals.push_back(normals[f][c]);
 			}
+
+			for (int cd = 0; cd < 2; cd++) {
+				mesh.texCoords.push_back(texCoordsExpr[f][v][cd]);
+			}
 		}
 
 		for (int i = 0; i < 6; i++)
@@ -177,7 +670,7 @@ static block_mesh Block::CubeBlock()
 
 		mesh.cull.push_back(cull_bits[f]);
 	}
-
+	//mesh.texCoords.clear();
 	return mesh;
 }
 
@@ -193,6 +686,25 @@ block_mesh Block::PlantBlock()
 		{ { 1,0,0 }, { 0,0,1 }, { 0,1,1 }, { 1,1,0 } },
 		{ { 1,0,0 }, { 1,1,0 }, { 0,1,1 }, { 0,0,1 } },
 	};
+
+	float texCoordsExpr[6][4][2] = {
+		{ {u[0], v[0]}, {u[1], v[1]}, {u[2], v[2]}, {u[3], v[3]}}, //North
+		{ {u[4], v[4]}, {u[5], v[5]}, {u[6], v[6]}, {u[7], v[7]}}, //East
+		{ {u[8], v[8]}, {u[9], v[9]}, {u[10], v[10]}, {u[11], v[11]}}, //West
+		{ {u[12], v[12]}, {u[13], v[13]}, {u[14], v[14]}, {u[15], v[15]}}, //South
+		{ {u[16], v[16]}, {u[17], v[17]}, {u[18], v[18]}, {u[19], v[19]}}, //Up
+		{ {u[20], v[20]}, {u[21], v[21]}, {u[22], v[22]}, {u[23], v[23]}} //Down
+	};
+
+	//float texCoordsExpr[6][4][2] = {
+	//	{ {0, 0}, {1, 0}, {1, 1}, {0, 1} }, //North
+	//	{ {0, 0}, {1, 0}, {1, 1}, {0, 1} }, //East
+	//	{ {0, 0}, {1, 0}, {1, 1}, {0, 1} }, //West
+	//	{ {0, 0}, {1, 0}, {1, 1}, {0, 1} }, //South
+	//	{ {0, 0}, {1, 0}, {1, 1}, {0, 1} }, //Up
+	//	{ {0, 0}, {1, 0}, {1, 1}, {0, 1} } //Down
+	//};
+
 
 	// normals point across each diagonal, the reversed copies point the other way
 	constexpr float normals[4][3] =
@@ -217,6 +729,11 @@ block_mesh Block::PlantBlock()
 			{
 				mesh.vertices.push_back(corners[f][v][c]);
 				mesh.normals.push_back(normals[f][c]);
+				
+			}
+
+			for (int cd = 0; cd < 2; cd++) {
+				mesh.texCoords.push_back(texCoordsExpr[f][v][cd]);
 			}
 		}
 

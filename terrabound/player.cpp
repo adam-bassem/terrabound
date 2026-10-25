@@ -95,6 +95,7 @@ void Player::Update(PlayerCamera& camera)
 	const bool in_reach = raycast.Hit && raycast.Distance <= 6.0f;
 
 	if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) lmbDuration += dt;
+	
 	else lmbDuration = 0.0;
 
 	if (IsMouseButtonDown(MOUSE_BUTTON_RIGHT)) rmbDuration += dt;
@@ -103,7 +104,7 @@ void Player::Update(PlayerCamera& camera)
 	// Break
 	if (in_reach)
 	{
-		double break_time = std::max(0.25f, (float)Block::GetHardness(*raycast.HitBlock));
+		double break_time = std::max(0.15f, (float)Block::GetHardness(*raycast.HitBlock));
 		if (lmbDuration >= break_time)
 		{
 			World::BreakBlock(raycast.GlobalBlockPosition);
@@ -112,7 +113,7 @@ void Player::Update(PlayerCamera& camera)
 	}
 
 	// Place
-	if (in_reach && rmbDuration >= 0.25)
+	if (in_reach && rmbDuration >= 0.15f)
 	{
 		World::PlaceBlock(raycast.FirstVector3AlongNormal);
 		rmbDuration = 0.0;

@@ -15,6 +15,8 @@
 #include "FastNoiseLite.hpp"
 #include <algorithm>
 #include "postprocessing.hpp"
+#include <iostream>
+
 
 Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 {
@@ -42,9 +44,24 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 	cave_b_spag.SetFrequency(0.03f);
 	cave_b_spag.SetFractalType(FastNoiseLite::FractalType_None);
 
-	constexpr float terrain_base = 96.0f;
-	constexpr float terrain_amp = 120.0f;
-	constexpr float cave_threshold = 0.18f;
+	
+	//constexpr float terrain_base = 96.0f; //Old value
+	//constexpr float terrain_base = 10.0f; //Currently my favorite
+
+
+	//Not entirely sure what this does but from my testing,
+	// the lower this number the more close each mountain is,
+	// else each mountain is much further the higher this number is -Alex
+
+	constexpr float terrain_base = 20.0f; 
+	
+	//constexpr float terrain_amp = 220.0f; //Higher number, Steeper terrain -Alex
+	constexpr float terrain_amp = 5.0f; //Higher number, Steeper terrain, Lower, more flatter -Alex
+
+	//constexpr float cave_threshold = 0.18f; //Old value
+
+	///Lower number, less and smaller caves. Higher Number,  more and bigger caves. -Alex
+	constexpr float cave_threshold = 0.25f; 
 
 	// fill layers and carve caves
 	for (int x = 0; x < subchunk_size; x++)
@@ -217,8 +234,11 @@ void Chunk::GenerateMesh()
 	{
 		std::vector<float> vertices;
 		std::vector<float> normals;
+		std::vector<float> texCoords;
 		std::vector<unsigned char> colours;
 		std::vector<unsigned int> indices;
+	
+
 
 		Subchunk& subchunk = subchunks[subchunk_i];
 
@@ -229,16 +249,20 @@ void Chunk::GenerateMesh()
 				for (int z = 0; z < subchunk_size; z++)
 				{
 					block_data& this_block = subchunk.blocks[x][y][z];
+					
 					if (this_block.type == BLOCK_AIR) continue;
 
 					const int _y = y + (subchunk_size * subchunk_i);
-
+			
 					// colour comes from the block, not the mesh
 					const uint32_t colour = Block::GetColour(this_block);
 					const uint8_t r = (colour >> 16) & 0xFF;
 					const uint8_t g = (colour >> 8) & 0xFF;
 					const uint8_t b = colour & 0xFF;
 
+
+				
+					Block::getTileTextures(this_block);
 					uint8_t cull = 0;
 					if (IsSolidAt(x - 1, _y, z)) cull |= CULL_WEST;
 					if (IsSolidAt(x + 1, _y, z)) cull |= CULL_EAST;
@@ -247,8 +271,9 @@ void Chunk::GenerateMesh()
 					if (IsSolidAt(x, _y, z - 1)) cull |= CULL_SOUTH;
 					if (IsSolidAt(x, _y, z + 1)) cull |= CULL_NORTH;
 
-					const block_mesh& mesh = Block::GetBlockMesh(this_block);
-
+					
+					const block_mesh &mesh = Block::GetBlockMesh(this_block);
+				
 					for (size_t q = 0; q < mesh.cull.size(); q++)
 					{
 						if (cull & mesh.cull[q]) continue;
@@ -279,9 +304,17 @@ void Chunk::GenerateMesh()
 						for (int k = 0; k < 4; k++)
 						{
 							const size_t vi = (q * 4 + k) * 3;
+							const size_t vi2 = (q * 4 + k) * 2;
+
 							const float lx = mesh.vertices[vi];
 							const float ly = mesh.vertices[vi + 1];
 							const float lz = mesh.vertices[vi + 2];
+
+					
+							float u2 = mesh.texCoords[vi2];
+							float v2 = mesh.texCoords[vi2 + 1];
+
+						//	std::cout << u2 << "\n";
 
 							vertices.push_back(x + lx);
 							vertices.push_back(_y + ly);
@@ -291,26 +324,42 @@ void Chunk::GenerateMesh()
 							normals.push_back(nrm[1]);
 							normals.push_back(nrm[2]);
 
+							texCoords.push_back(u2);
+							texCoords.push_back(v2);
+
+							
+
 							// which end of each in-plane axis this corner sits on
 							const int su = (lx * u[0] + ly * u[1] + lz * u[2]) >= 0.5f ? 1 : -1;
 							const int sv = (lx * v[0] + ly * v[1] + lz * v[2]) >= 0.5f ? 1 : -1;
 
 							const float ao = mesh.allow_ao ? GetAO(x, _y, z, n, u, v, su, sv) : 1.0f;
 
-							colours.push_back(r);
+							colours.push_back(r); //absolutely horrible solution to the textures not changing but ehh works for now
 							colours.push_back(g);
 							colours.push_back(b);
 							colours.push_back((unsigned char)(ao * 255.0f));
-						}
+							
 
+							//u2 = 0;
+							//v2 = 0;
+
+						}	
+					//	mesh.texCoords.empty();
+						//mesh.texCoords.clear();
 						// six indices per quad, rebased onto this quad's first vertex
+
+					
 						for (int i = 0; i < 6; i++)
 						{
 							indices.push_back(first + (mesh.indices[q * 6 + i] - (unsigned int)(q * 4)));
 						}
-					}
+					
+					}// delete[] uvs; //If i don't call this then an addition 2gb of ram will be taken, don't ask me how lol -Alex;
 				}
+					
 			}
+			
 		}
 
 		// expand indices into plain triangles, no index is limited to 16 bits
@@ -318,7 +367,9 @@ void Chunk::GenerateMesh()
 		mesh.vertexCount = (int)indices.size();
 		mesh.triangleCount = (int)indices.size() / 3;
 		mesh.vertices = (float*)MemAlloc(indices.size() * 3 * sizeof(float));
+		mesh.texcoords = (float*)MemAlloc(texCoords.size() * 2 * sizeof(float));
 		mesh.normals = (float*)MemAlloc(indices.size() * 3 * sizeof(float));
+
 		mesh.colors = (unsigned char*)MemAlloc(indices.size() * 4 * sizeof(unsigned char));
 		mesh.indices = nullptr;
 
@@ -334,13 +385,20 @@ void Chunk::GenerateMesh()
 			{
 				mesh.colors[i * 4 + c] = colours[k * 4 + c];
 			}
-		}
 
+			for (int t = 0; t < 2; t++) { //This works perfectly fine, do not touch this when trying to debug texture issues! - Alex
+				mesh.texcoords[i * 2 + t] = texCoords[k * 2 + t];
+			}
+		
+		}
+		//texCoords.clear();
 		subchunk.subchunk_mesh = mesh;
 		UploadMesh(&subchunk.subchunk_mesh, false);
+		//texCoords.clear();
 	}
 
 	has_mesh = true;
+	
 }
 
 void Chunk::GenerateModel()
@@ -353,8 +411,11 @@ void Chunk::GenerateModel()
 		if (subchunk.subchunk_mesh.vertexCount == 0) continue;
 
 		subchunk.subchunk_model = LoadModelFromMesh(subchunk.subchunk_mesh);
+		subchunk.subchunk_model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("tiles_atlas.png");
 		subchunk.subchunk_mesh = Mesh { };
 		subchunk.subchunk_model.materials[0].shader = PostProcessing::GetTerrainShader();
+	
+	//	subchunk.subchunk_model.materials[0].diffuse = PostProcessing::GetTerrainShader();
 	}
 
 	has_model = true;

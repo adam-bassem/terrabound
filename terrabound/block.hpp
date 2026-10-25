@@ -14,13 +14,13 @@
 
 #include <cstdint>
 #include <vector>
-
 enum block_type
 {
 	BLOCK_AIR,
 	BLOCK_GRASS,
 	BLOCK_DIRT,
 	BLOCK_STONE,
+	BLOCK_SNOW,
 	BLOCK_WOOD_LOG,
 	BLOCK_TREE_LEAVES,
 	BLOCK_BUSH_LEAVES,
@@ -46,6 +46,11 @@ struct block_mesh
 	std::vector<float> vertices;
 	// face direction, 4 per quad, 3 floats each
 	std::vector<float> normals;
+
+	//texture array list
+	std::vector<float> texCoords;
+
+
 	// RGBA per corner, alpha channel is used by AO
 	std::vector<unsigned char> colours;
 	// 6 per quad, values 0..3 within that quad
@@ -59,10 +64,21 @@ struct block_mesh
 
 namespace Block
 {
+
+
+
 	uint32_t GetColour(block_data data);
+
+	void getTileTextures(block_data &data); //Added this -Alex
+
 	float GetHardness(block_data& data);
+
 	block_mesh GetBlockMesh(block_data& data);
+
 	static block_mesh CubeBlock();
+
 	static block_mesh PlantBlock();
+
 	block_data GetBlock(block_type type);
+
 }

@@ -19,17 +19,20 @@ namespace
 
 		in vec3 vertexPosition;
 		in vec4 vertexColor;
+		in vec2 v_TexCoords;;
 
 		uniform mat4 mvp;
 
 		out vec3 fragColor;
 		out float fragAO;
+		out vec2 o_TexCoords;
 
 		void main()
 		{
 			fragColor = vertexColor.rgb;
 			fragAO = vertexColor.a;
 			gl_Position = mvp * vec4(vertexPosition, 1.0);
+			o_TexCoords = v_TexCoords;
 		}
 		)";
 
@@ -38,12 +41,15 @@ namespace
 
 		in vec3 fragColor;
 		in float fragAO;
+		in vec2 o_TexCoords;
 
 		out vec4 finalColor;
 
+		uniform sampler2D tileTex;
+
 		void main()
 		{
-			finalColor = vec4(fragColor * fragAO, 1.0);
+			finalColor = texture(tileTex, o_TexCoords) * vec4(fragColor * fragAO, 1.0);
 		}
 		)";
 

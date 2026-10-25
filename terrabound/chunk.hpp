@@ -14,6 +14,7 @@
 
 #include "block.hpp"
 #include "raylib.h"
+#include "raymath.h"
 #include <string>
 #include <random>
 

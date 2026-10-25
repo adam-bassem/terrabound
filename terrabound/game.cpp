@@ -63,11 +63,14 @@ int main()
 	World::GenerateWorld();
 
 	Mesh skybox_mesh = GenMeshCube(2.0f, 2.0f, 2.0f);
+
 	Model skybox = LoadModelFromMesh(skybox_mesh);
 	Shader skybox_shader = PostProcessing::GetSkyShader();
 	int sky_horizon_loc = GetShaderLocation(skybox_shader, "horizonColor");
 	int sky_zenith_loc = GetShaderLocation(skybox_shader, "zenithColor");
 	int sky_sun_loc = GetShaderLocation(skybox_shader, "sunDir");
+
+
 	skybox.materials[0].shader = skybox_shader;
 
 	Vector3 horizon = { 0.53f, 0.81f, 0.92f };
@@ -79,6 +82,10 @@ int main()
 	SetShaderValue(skybox_shader, sky_sun_loc, &sun, SHADER_UNIFORM_VEC3);
 
 	// As long as the window is still open, keep looping
+
+	Texture2D tex = LoadTexture("tiles_atlas.png");
+	SetTextureFilter(tex, TEXTURE_FILTER_POINT);
+
 	while (!WindowShouldClose())
 	{
 		BeginDrawing();
@@ -136,17 +143,27 @@ int main()
 			cursor_enabled = !cursor_enabled;
 		}
 
+	
+		
+		//Compass
+		
 		float angle = std::atan2f(f.x, f.z) * RAD2DEG;
 		if (angle < 0) angle += 360.0f;
 
+	
 		const char* compass = "N";
+			
 		if (angle >= 315.0f || angle < 45.0f) compass = "N";
 		else if (angle < 135.0f) compass = "W";
 		else if (angle < 225.0f) compass = "S";
 		else compass = "E";
 
+
+
 		DrawText(TextFormat("XYZ: %.2f / %.2f / %.2f", pos.x, pos.y, pos.z), 20, 20, 20, WHITE);
 		DrawText(TextFormat("Facing: %s (%.1f deg)", compass, angle), 20, 40, 20, WHITE);
+
+
 		DrawFPS(20, 60);
 
 		Player::DrawUI();

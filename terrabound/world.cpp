@@ -72,6 +72,7 @@ namespace
 		}
 		to_remesh.insert({ x, z });
 		return true;
+		//delete[] c;
 	}
 }
 
@@ -91,8 +92,8 @@ void World::Render(PlayerCamera& camera)
 	constexpr int dx[4] = { 0, 0, 1, -1 };
 	constexpr int dz[4] = { 1, -1, 0, 0 };
 
-	constexpr int max_new_chunks = 1;
-	constexpr int max_remesh = 2;
+	constexpr int max_new_chunks = 2;
+	constexpr int max_remesh = 4;
 
 	if (r != load_order_radius) BuildLoadOrder(r);
 
