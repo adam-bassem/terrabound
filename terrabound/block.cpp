@@ -31,6 +31,11 @@ uint32_t Block::GetColour(block_data data)
 			return 0xFF1F642D;
 		}
 
+		//case BLOCK_COAL_ORE:
+		//{
+		//	return 0x000000000;
+		//}
+
 		case BLOCK_DIRT:
 		{
 			return 0xFF73523B;
@@ -430,6 +435,10 @@ void Block::getTileTextures(block_data &data) {
 	case BLOCK_BUSH_LEAVES : {
 		//break;
 	}
+
+	//case BLOCK_COAL_ORE: {
+	//	break;
+	//}
 
 	case BLOCK_GRASS: {
 		//North

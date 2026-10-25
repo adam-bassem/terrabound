@@ -35,6 +35,8 @@ namespace
 	Texture2D skybox_texture;
 }
 
+static void toggleCursor();
+
 int main()
 {
 	// Enable anti-aliasing (MSAA 4x)
@@ -86,6 +88,8 @@ int main()
 	Texture2D tex = LoadTexture("tiles_atlas.png");
 	SetTextureFilter(tex, TEXTURE_FILTER_POINT);
 
+	bool isInInventory = false;
+
 	while (!WindowShouldClose())
 	{
 		BeginDrawing();
@@ -105,13 +109,16 @@ int main()
 		rlEnableBackfaceCulling();
 
 		World::Render(player_camera);
+		//MatrixRotateY((90 + 90.0f) * PI / 180);
+		float wireLen = 1;
+		rlSetLineWidth(2);
 
 		if (result.Hit && result.Distance <= 6)
 		{
 			Vector3 centre = { result.GlobalBlockPosition.x + 0.5f,
 							   result.GlobalBlockPosition.y + 0.5f,
 							   result.GlobalBlockPosition.z + 0.5f };
-			DrawCubeWires(centre, 1.01f, 1.01f, 1.01f, BLACK);
+			DrawCubeWires(centre, (wireLen+.01f), (wireLen + .01f), (wireLen + .01f), BLACK);
 		}
 
 		// axis gizmo, always on top
@@ -136,37 +143,47 @@ int main()
 		}
 		Player::Update(player_camera);
 
+		if (isInInventory) {
+			Player::drawInventory();
+		}
+
+		if (IsKeyPressed(KEY_I)) { //Toggle between in inventory or not
+			isInInventory = !isInInventory;
+			toggleCursor();
+		}
+
 		// If escape is pressed, toggle cursor on/off
 		if (IsKeyPressed(KEY_ESCAPE))
 		{
-			cursor_enabled ? DisableCursor() : EnableCursor();
-			cursor_enabled = !cursor_enabled;
+			toggleCursor();
 		}
-
-	
-		
-		//Compass
-		
-		float angle = std::atan2f(f.x, f.z) * RAD2DEG;
-		if (angle < 0) angle += 360.0f;
-
-	
-		const char* compass = "N";
-			
-		if (angle >= 315.0f || angle < 45.0f) compass = "N";
-		else if (angle < 135.0f) compass = "W";
-		else if (angle < 225.0f) compass = "S";
-		else compass = "E";
-
-
-
-		DrawText(TextFormat("XYZ: %.2f / %.2f / %.2f", pos.x, pos.y, pos.z), 20, 20, 20, WHITE);
-		DrawText(TextFormat("Facing: %s (%.1f deg)", compass, angle), 20, 40, 20, WHITE);
-
-
 		DrawFPS(20, 60);
 
+		
+
 		Player::DrawUI();
+
+		//Some screen ui tilt testing
+		//Camera2D cam2 = { 0 };
+		//cam2.offset.x = -GetScreenWidth() / 2;   // coordinate x origin
+		//cam2.offset.y = GetScreenHeight() / 2;   // coordinate y origin
+		//cam2.target.x = 0;         // rotation and zoom x origin (from offset above)
+		//cam2.target.y = 0;         // rotation and zoom y origin (from offset above)
+		//cam2.rotation = 0;        // rotation in deg
+		//cam2.zoom = 1.0f;      // magnification, i.e fov or zoom
+		//if (IsKeyDown(KEY_E)) {
+		//	if (cam2.rotation < 35.0f) {
+		//		cam2.rotation += 3.5f;
+		//	}
+
+		//}
+		//BeginMode2D(cam2);
+
+		//Player::DrawUI();
+
+
+
+		//EndMode2D();
 
 		EndDrawing();
 	}
@@ -179,4 +196,10 @@ int main()
 	// Finished program
 	CloseWindow();
 	return 0;
+}
+
+static void toggleCursor() {
+
+	cursor_enabled ? DisableCursor() : EnableCursor();
+	cursor_enabled = !cursor_enabled;
 }

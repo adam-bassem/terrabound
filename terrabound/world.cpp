@@ -200,13 +200,15 @@ void World::BreakBlock(Vector3 Global)
 	found->second->GenerateModel();
 }
 
-void World::PlaceBlock(Vector3 Global)
+void World::PlaceBlock(Vector3 Global, block_type block)
 {
 	block_data* b = GetBlock(Global);
 	if (!b) return;
 
-	b->type = BLOCK_STONE;
+	b->type = block;
 	b->state = (block_state)0;
+
+
 
 	const int wx = (int)std::floor(Global.x);
 	const int wy = (int)std::floor(Global.y);

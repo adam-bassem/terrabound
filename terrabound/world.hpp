@@ -22,5 +22,5 @@ namespace World
 	void Render(PlayerCamera& camera);
 	block_data* GetBlock(Vector3 Global);
 	void BreakBlock(Vector3 Global);
-	void PlaceBlock(Vector3 Global);
+	void PlaceBlock(Vector3 Global, block_type block);
 }

@@ -86,7 +86,7 @@ RaycastResult DDARaycast::DoRaycast(Vector3 Origin, Vector3 Forward)
 			};
 
 			block_data* adjacent = World::GetBlock(adjacentPos);
-
+			//DrawText()
 			return {
 				true,
 				Vector3{ (float)x, (float)y, (float)z },

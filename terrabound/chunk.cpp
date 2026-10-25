@@ -56,12 +56,12 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 	constexpr float terrain_base = 20.0f; 
 	
 	//constexpr float terrain_amp = 220.0f; //Higher number, Steeper terrain -Alex
-	constexpr float terrain_amp = 5.0f; //Higher number, Steeper terrain, Lower, more flatter -Alex
+	constexpr float terrain_amp = 105.0f; //Higher number, Steeper terrain, Lower, more flatter -Alex
 
 	//constexpr float cave_threshold = 0.18f; //Old value
 
 	///Lower number, less and smaller caves. Higher Number,  more and bigger caves. -Alex
-	constexpr float cave_threshold = 0.25f; 
+	constexpr float cave_threshold = 0.15f; 
 
 	// fill layers and carve caves
 	for (int x = 0; x < subchunk_size; x++)
@@ -84,7 +84,7 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 				else if (y >= top - 4) b = Block::GetBlock(BLOCK_DIRT);
 				else b = Block::GetBlock(BLOCK_STONE);
 
-				uint32_t h = (uint32_t)(position.x + x) * 0x27d4eb2dU
+				uint32_t h = (uint32_t)(position.x + x) * 0x27d4eb2dU //Is this hex even needed??? -Alex
 					^ (uint32_t)y * 0x165667b1U
 					^ (uint32_t)(position.z + z) * 0x9e3779b9U
 					^ (uint32_t)seed;
@@ -341,12 +341,7 @@ void Chunk::GenerateMesh()
 							colours.push_back((unsigned char)(ao * 255.0f));
 							
 
-							//u2 = 0;
-							//v2 = 0;
-
 						}	
-					//	mesh.texCoords.empty();
-						//mesh.texCoords.clear();
 						// six indices per quad, rebased onto this quad's first vertex
 
 					
@@ -414,8 +409,6 @@ void Chunk::GenerateModel()
 		subchunk.subchunk_model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("tiles_atlas.png");
 		subchunk.subchunk_mesh = Mesh { };
 		subchunk.subchunk_model.materials[0].shader = PostProcessing::GetTerrainShader();
-	
-	//	subchunk.subchunk_model.materials[0].diffuse = PostProcessing::GetTerrainShader();
 	}
 
 	has_model = true;

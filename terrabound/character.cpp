@@ -1,11 +1,12 @@
 #include "character.hpp"
 #include "raymath.h"
+#include <random>
 
 constexpr float fly_speed = 12.0f;
 constexpr float fly_sprint_speed_multiplier = 3.0f;
 
 Character::Character(PlayerCamera& cam)
-	: camera(cam), velocity{ 0, 0, 0 }, position{ 0, 50 ,0 }
+	: camera(cam), velocity{ 0, 0, 0 }, position{ 0, 50 , 0 }
 {
 }
 

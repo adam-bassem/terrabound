@@ -19,5 +19,6 @@ namespace Player
 	void Initialise();
 	void Shutdown();
 	void DrawUI();
+	void drawInventory();
 	void Update(PlayerCamera& camera);
 }

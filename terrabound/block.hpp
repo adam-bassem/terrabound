@@ -25,6 +25,7 @@ enum block_type
 	BLOCK_TREE_LEAVES,
 	BLOCK_BUSH_LEAVES,
 	BLOCK_SHORT_GRASS,
+	BLOCK_COAL_ORE,
 };
 
 // test states for filled block,
