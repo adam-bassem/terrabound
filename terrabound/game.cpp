@@ -84,6 +84,8 @@ int main()
 
 	Texture2D tex = LoadTextureFromImage(LoadImage("tiles_atlas.png"));
 	GenTextureMipmaps(&tex);
+	SetTextureFilter(tex, TEXTURE_FILTER_POINT);
+	//SetTexture
 
 	// As long as the window is still open, keep looping
 	while (!WindowShouldClose())
