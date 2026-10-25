@@ -67,16 +67,16 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 				else if (y > 135 && y <= 140) {
 					b.state = BLOCK_WATER;
 				}
+				
+
+				else if (y == 135 ) {
+					b.state = BLOCK_BEDROCK;
+				}
+
 				else if (y > 80 && y < 135) {
 					b.state = BLOCK_DIRT;
 				}
 
-
-				//else if (y == 80) {
-
-				//	
-				//	b.type = BLOCK_AIR;			
-				//}
 				else {
 					b.type = BLOCK_FILLED;
 					b.state = BLOCK_STONE;
