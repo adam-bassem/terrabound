@@ -104,7 +104,24 @@ void World::Render(PlayerCamera& camera)
 		if (ProcessChunk(chunk_x + offset.first, chunk_z + offset.second)) created++;
 	}
 
-	// Pass 2: remesh dirty chunks, within budget
+	// Pass 2: decorate chunks within 75% of render distance, then remesh dirty chunks
+	const float decorate_r = r * 0.75f;
+	const float decorate_sq = decorate_r * decorate_r;
+
+	for (const auto& offset : load_order)
+	{
+		if (offset.first * offset.first + offset.second * offset.second > decorate_sq) continue;
+
+		const int x = chunk_x + offset.first;
+		const int z = chunk_z + offset.second;
+		auto found = chunks.find({ x, z });
+		if (found == chunks.end() || !found->second) continue;
+		if (found->second->decorated) continue;
+
+		found->second->DecorateSecondPass();
+		to_remesh.insert({ x, z });
+	}
+
 	int remeshed = 0;
 	for (auto it = to_remesh.begin(); it != to_remesh.end() && remeshed < max_remesh; )
 	{

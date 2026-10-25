@@ -18,17 +18,17 @@
 
 Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 {
-	FastNoiseLite heightmap;
-	heightmap.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
-	heightmap.SetSeed((int)seed);
-	heightmap.SetFrequency(0.005f);
-	heightmap.SetFractalType(FastNoiseLite::FractalType_FBm);
-	heightmap.SetFractalOctaves(8);
-	heightmap.SetFractalLacunarity(1.85f);
-	heightmap.SetFractalGain(0.37f);
-	heightmap.SetFractalWeightedStrength(0.11f);
-	heightmap.SetDomainWarpType(FastNoiseLite::DomainWarpType_OpenSimplex2);
-	heightmap.SetDomainWarpAmp(22.0f);
+	FastNoiseLite heightmap_noise;
+	heightmap_noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+	heightmap_noise.SetSeed((int)seed);
+	heightmap_noise.SetFrequency(0.005f);
+	heightmap_noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+	heightmap_noise.SetFractalOctaves(8);
+	heightmap_noise.SetFractalLacunarity(1.85f);
+	heightmap_noise.SetFractalGain(0.37f);
+	heightmap_noise.SetFractalWeightedStrength(0.11f);
+	heightmap_noise.SetDomainWarpType(FastNoiseLite::DomainWarpType_OpenSimplex2);
+	heightmap_noise.SetDomainWarpAmp(22.0f);
 
 	FastNoiseLite cave_a_spag;
 	cave_a_spag.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
@@ -44,27 +44,18 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 
 	constexpr float terrain_base = 96.0f;
 	constexpr float terrain_amp = 120.0f;
-	constexpr float cave_threshold = 0.08f;
+	constexpr float cave_threshold = 0.18f;
 
-	int heightmap_heights[subchunk_size][subchunk_size];
-
-	// Pass 0: heightmap
+	// fill layers and carve caves
 	for (int x = 0; x < subchunk_size; x++)
 	{
 		for (int z = 0; z < subchunk_size; z++)
 		{
-			float n = heightmap.GetNoise(position.x + x, position.z + z);
+			float n = heightmap_noise.GetNoise(position.x + x, position.z + z);
 			float h = std::pow(std::tanh(n * 2.0f) * 0.5f + 0.5f, 1.5f);
-			heightmap_heights[x][z] = (int)(terrain_base + h * terrain_amp);
-		}
-	}
+			heightmap[x][z] = (int)(terrain_base + h * terrain_amp);
 
-	// Pass 1: fill layers and carve caves in one walk over each column
-	for (int x = 0; x < subchunk_size; x++)
-	{
-		for (int z = 0; z < subchunk_size; z++)
-		{
-			const int top = heightmap_heights[x][z];
+			const int top = heightmap[x][z];
 			const float wx = position.x + x;
 			const float wz = position.z + z;
 
@@ -72,19 +63,18 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 			{
 				block_data& b = subchunks[y / subchunk_size].blocks[x][y % subchunk_size][z];
 
-				if (y == top - 1)
-				{
-					b.type = BLOCK_GRASS;
-				}
-				else if (y >= top - 4)
-				{
-					b.type = BLOCK_DIRT;
-				}
-				else
-				{
-					b.type = BLOCK_STONE;
-				}
-				b.state = (block_state)GetRandomValue(0, 2);
+				if (y == top - 1) b = Block::GetBlock(BLOCK_GRASS);
+				else if (y >= top - 4) b = Block::GetBlock(BLOCK_DIRT);
+				else b = Block::GetBlock(BLOCK_STONE);
+
+				uint32_t h = (uint32_t)(position.x + x) * 0x27d4eb2dU
+					^ (uint32_t)y * 0x165667b1U
+					^ (uint32_t)(position.z + z) * 0x9e3779b9U
+					^ (uint32_t)seed;
+				h ^= h >> 15;
+				h *= 0x2c1b3c6dU;
+				h ^= h >> 12;
+				b.state = (block_state)(h % 3);
 
 				if (y < 1 || y > top - 5) continue;
 
@@ -98,13 +88,106 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 	}
 }
 
+// TODO: chunk_decorate.cpp
+void Chunk::DecorateTree(Vector3 base, std::mt19937_64& rng)
+{
+	const int bx = (int)base.x;
+	const int by = (int)base.y;
+	const int bz = (int)base.z;
+	const int max_y = subchunk_size * chunk_height_subchunks;
+
+	std::uniform_int_distribution<int> height_roll(4, 6);
+	const int h = height_roll(rng);
+
+	auto set = [&](int x, int y, int z, auto type)
+	{
+		if (x < 0 || x >= subchunk_size || z < 0 || z >= subchunk_size) return;
+		if (y < 0 || y >= max_y) return;
+		GetBlock(Vector3 { (float)x, (float)y, (float)z }) = Block::GetBlock(type);
+	};
+
+	for (int dy = h - 1; dy <= h; dy++)
+	{
+		for (int dx = -2; dx <= 2; dx++)
+		{
+			for (int dz = -2; dz <= 2; dz++)
+			{
+				set(bx + dx, by + dy, bz + dz, BLOCK_TREE_LEAVES);
+			}
+		}
+	}
+
+	for (int dx = -1; dx <= 1; dx++)
+	{
+		for (int dz = -1; dz <= 1; dz++)
+		{
+			set(bx + dx, by + h + 1, bz + dz, BLOCK_TREE_LEAVES);
+		}
+	}
+
+	// Trunk last, so the leaves don't cover it
+	for (int dy = 0; dy < h; dy++)
+	{
+		set(bx, by + dy, bz, BLOCK_WOOD_LOG);
+	}
+}
+
+void Chunk::DecorateBush(Vector3 base)
+{
+	const int bx = (int)base.x;
+	const int by = (int)base.y;
+	const int bz = (int)base.z;
+	const int max_y = subchunk_size * chunk_height_subchunks;
+
+	auto set = [&](int x, int y, int z, auto type)
+	{
+		if (x < 0 || x >= subchunk_size || z < 0 || z >= subchunk_size) return;
+		if (y < 0 || y >= max_y) return;
+		GetBlock(Vector3 { (float)x, (float)y, (float)z }) = Block::GetBlock(type);
+	};
+
+	// 3x3 at the surface level, one block on top
+	for (int dx = -1; dx <= 1; dx++)
+	{
+		for (int dz = -1; dz <= 1; dz++)
+		{
+			set(bx + dx, by, bz + dz, BLOCK_BUSH_LEAVES);
+		}
+	}
+
+	set(bx, by + 1, bz, BLOCK_BUSH_LEAVES);
+}
+
+void Chunk::DecorateSecondPass()
+{
+	if (decorated) return;
+	decorated = true;
+
+	std::mt19937_64 rng((uint64_t)seed
+		^ ((uint64_t)(int64_t)Position.x * 0x9E3779B97F4A7C15ull)
+		^ ((uint64_t)(int64_t)Position.z * 0xC2B2AE3D27D4EB4Full));
+	std::uniform_int_distribution<int> roll(0, 999);
+
+	for (int x = 0; x < subchunk_size; x++)
+	{
+		for (int z = 0; z < subchunk_size; z++)
+		{
+			const int r = roll(rng);
+
+			if (r < 8) DecorateTree(Vector3 { (float)x, heightmap[x][z], (float)z }, rng); // 0.8% tree
+			else if (r < 32) DecorateBush(Vector3 { (float)x, heightmap[x][z], (float)z }); // 3.2% bush
+			else if (r < 60) GetBlock(Vector3 { (float)x, heightmap[x][z], (float)z }) = Block::GetBlock(BLOCK_SHORT_GRASS); // 6% short grass
+		}
+	}
+}
+
 static void ReleaseSubchunk(Subchunk& subchunk)
 {
 	if (subchunk.subchunk_model.meshes) UnloadModel(subchunk.subchunk_model);
-	subchunk.subchunk_model = Model{};
+	subchunk.subchunk_model = Model { };
 
 	if (subchunk.subchunk_mesh.vertices) UnloadMesh(subchunk.subchunk_mesh);
-	subchunk.subchunk_mesh = Mesh{};
+	subchunk.subchunk_mesh = Mesh { };
 }
 
 Chunk::~Chunk()
@@ -133,8 +216,8 @@ void Chunk::GenerateMesh()
 	for (int subchunk_i = 0; subchunk_i < chunk_height_subchunks; subchunk_i++)
 	{
 		std::vector<float> vertices;
-		std::vector<unsigned char> colours;
 		std::vector<float> normals;
+		std::vector<unsigned char> colours;
 		std::vector<unsigned int> indices;
 
 		Subchunk& subchunk = subchunks[subchunk_i];
@@ -147,429 +230,91 @@ void Chunk::GenerateMesh()
 				{
 					block_data& this_block = subchunk.blocks[x][y][z];
 					if (this_block.type == BLOCK_AIR) continue;
+
+					const int _y = y + (subchunk_size * subchunk_i);
+
+					// colour comes from the block, not the mesh
+					const uint32_t colour = Block::GetColour(this_block);
+					const uint8_t r = (colour >> 16) & 0xFF;
+					const uint8_t g = (colour >> 8) & 0xFF;
+					const uint8_t b = colour & 0xFF;
+
 					uint8_t cull = 0;
+					if (IsSolidAt(x - 1, _y, z)) cull |= CULL_WEST;
+					if (IsSolidAt(x + 1, _y, z)) cull |= CULL_EAST;
+					if (IsSolidAt(x, _y - 1, z)) cull |= CULL_DOWN;
+					if (IsSolidAt(x, _y + 1, z)) cull |= CULL_UP;
+					if (IsSolidAt(x, _y, z - 1)) cull |= CULL_SOUTH;
+					if (IsSolidAt(x, _y, z + 1)) cull |= CULL_NORTH;
 
-					uint32_t colour = Block::GetColour(this_block);
-					// 0xAARRGGBB
-					uint8_t a = (colour >> 24) & 0xFF;
-					uint8_t r = (colour >> 16) & 0xFF;
-					uint8_t g = (colour >> 8) & 0xFF;
-					uint8_t b = colour & 0xFF;
+					const block_mesh& mesh = Block::GetBlockMesh(this_block);
 
-					int _y = y + (subchunk_size * subchunk_i);
-
-					if (IsSolidAt(x - 1, _y, z))
+					for (size_t q = 0; q < mesh.cull.size(); q++)
 					{
-						cull |= CULL_WEST;
-					}
+						if (cull & mesh.cull[q]) continue;
 
-					if (IsSolidAt(x + 1, _y, z))
-					{
-						cull |= CULL_EAST;
-					}
+						const float* nrm = &mesh.normals[q * 12];
+						const int n[3] = { (int)nrm[0], (int)nrm[1], (int)nrm[2] };
 
-					if (IsSolidAt(x, _y - 1, z))
-					{
-						cull |= CULL_DOWN;
-					}
-
-					if (IsSolidAt(x, _y + 1, z))
-					{
-						cull |= CULL_UP;
-					}
-
-					if (IsSolidAt(x, _y, z - 1))
-					{
-						cull |= CULL_SOUTH;
-					}
-
-					if (IsSolidAt(x, _y, z + 1))
-					{
-						cull |= CULL_NORTH;
-					}
-
-					if (!(cull & CULL_NORTH))
-					{
-						const int indcs = vertices.size() / 3;
-
-						// 0,0,1
-						normals.push_back(0 + x);
-						normals.push_back(0 + _y);
-						normals.push_back(1 + z);
-						vertices.push_back(0 + x);
-						vertices.push_back(0 + _y);
-						vertices.push_back(1 + z);
-
-						// 1,0,1
-						normals.push_back(1 + x);
-						normals.push_back(0 + _y);
-						normals.push_back(1 + z);
-						vertices.push_back(1 + x);
-						vertices.push_back(0 + _y);
-						vertices.push_back(1 + z);
-
-						// 1,1,1
-						normals.push_back(1 + x);
-						normals.push_back(1 + _y);
-						normals.push_back(1 + z);
-						vertices.push_back(1 + x);
-						vertices.push_back(1 + _y);
-						vertices.push_back(1 + z);
-
-						// 0,1,1
-						normals.push_back(0 + x);
-						normals.push_back(1 + _y);
-						normals.push_back(1 + z);
-						vertices.push_back(0 + x);
-						vertices.push_back(1 + _y);
-						vertices.push_back(1 + z);
-
-						// 0,1,2,2,3,0 NORTH
-						indices.push_back(0 + indcs);
-						indices.push_back(1 + indcs);
-						indices.push_back(2 + indcs);
-						indices.push_back(2 + indcs);
-						indices.push_back(3 + indcs);
-						indices.push_back(0 + indcs);
-
-						constexpr int n[3] = { 0, 0, 1 };
-						constexpr int u[3] = { 1, 0, 0 };
-						constexpr int v[3] = { 0, 1, 0 };
-
-						const float ao[4] = {
-							GetAO(x, _y, z, n, u, v, -1, -1),
-							GetAO(x, _y, z, n, u, v, 1, -1),
-							GetAO(x, _y, z, n, u, v, 1, 1),
-							GetAO(x, _y, z, n, u, v, -1, 1),
-						};
-						for (int i = 0; i < 4; i++)
+						// the two directions across the face, the normal doesn't point along them
+						int u[3], v[3];
+						if (n[0] != 0)
 						{
-							colours.push_back(r);
-							colours.push_back(g);
-							colours.push_back(b);
-							colours.push_back((unsigned char)(ao[i] * 255.0f));
+							u[0] = 0; u[1] = 1; u[2] = 0;
+							v[0] = 0; v[1] = 0; v[2] = 1;
 						}
-					}
-
-					if (!(cull & CULL_SOUTH))
-					{
-						const int indcs = vertices.size() / 3;
-
-						// 0,0,0
-						normals.push_back(0 + x);
-						normals.push_back(0 + _y);
-						normals.push_back(0 + z);
-						vertices.push_back(0 + x);
-						vertices.push_back(0 + _y);
-						vertices.push_back(0 + z);
-
-						// 1,0,0
-						normals.push_back(1 + x);
-						normals.push_back(0 + _y);
-						normals.push_back(0 + z);
-						vertices.push_back(1 + x);
-						vertices.push_back(0 + _y);
-						vertices.push_back(0 + z);
-
-						// 1,1,0
-						normals.push_back(1 + x);
-						normals.push_back(1 + _y);
-						normals.push_back(0 + z);
-						vertices.push_back(1 + x);
-						vertices.push_back(1 + _y);
-						vertices.push_back(0 + z);
-
-						// 0,1,0
-						normals.push_back(0 + x);
-						normals.push_back(1 + _y);
-						normals.push_back(0 + z);
-						vertices.push_back(0 + x);
-						vertices.push_back(1 + _y);
-						vertices.push_back(0 + z);
-
-						// 0,1,2,2,3,0
-						indices.push_back(0 + indcs);
-						indices.push_back(3 + indcs);
-						indices.push_back(2 + indcs);
-						indices.push_back(2 + indcs);
-						indices.push_back(1 + indcs);
-						indices.push_back(0 + indcs);
-
-						constexpr int n[3] = { 0, 0, -1 };
-						constexpr int u[3] = { 1, 0, 0 };
-						constexpr int v[3] = { 0, 1, 0 };
-
-						const float ao[4] = {
-							GetAO(x, _y, z, n, u, v, -1, -1),
-							GetAO(x, _y, z, n, u, v, 1, -1),
-							GetAO(x, _y, z, n, u, v, 1, 1),
-							GetAO(x, _y, z, n, u, v, -1, 1),
-						};
-						for (int i = 0; i < 4; i++)
+						else if (n[1] != 0)
 						{
-							colours.push_back(r);
-							colours.push_back(g);
-							colours.push_back(b);
-							colours.push_back((unsigned char)(ao[i] * 255.0f));
+							u[0] = 1; u[1] = 0; u[2] = 0;
+							v[0] = 0; v[1] = 0; v[2] = 1;
 						}
-					}
-
-					if (!(cull & CULL_EAST))
-					{
-						const int indcs = vertices.size() / 3;
-
-						// 1,0,0
-						normals.push_back(1);
-						normals.push_back(0);
-						normals.push_back(0);
-						vertices.push_back(1 + x);
-						vertices.push_back(0 + _y);
-						vertices.push_back(0 + z);
-
-						// 1,0,1
-						normals.push_back(1);
-						normals.push_back(0);
-						normals.push_back(0);
-						vertices.push_back(1 + x);
-						vertices.push_back(0 + _y);
-						vertices.push_back(1 + z);
-
-						// 1,1,1
-						normals.push_back(1);
-						normals.push_back(0);
-						normals.push_back(0);
-						vertices.push_back(1 + x);
-						vertices.push_back(1 + _y);
-						vertices.push_back(1 + z);
-
-						// 1,1,0
-						normals.push_back(1);
-						normals.push_back(0);
-						normals.push_back(0);
-						vertices.push_back(1 + x);
-						vertices.push_back(1 + _y);
-						vertices.push_back(0 + z);
-
-						// 0,1,2,2,3,0
-						indices.push_back(0 + indcs);
-						indices.push_back(3 + indcs);
-						indices.push_back(2 + indcs);
-						indices.push_back(2 + indcs);
-						indices.push_back(1 + indcs);
-						indices.push_back(0 + indcs);
-
-						constexpr int n[3] = { 1, 0, 0 };
-						constexpr int u[3] = { 0, 0, 1 };
-						constexpr int v[3] = { 0, 1, 0 };
-
-						const float ao[4] = {
-							GetAO(x, _y, z, n, u, v, -1, -1),
-							GetAO(x, _y, z, n, u, v, 1, -1),
-							GetAO(x, _y, z, n, u, v, 1, 1),
-							GetAO(x, _y, z, n, u, v, -1, 1),
-						};
-						for (int i = 0; i < 4; i++)
+						else
 						{
-							colours.push_back(r);
-							colours.push_back(g);
-							colours.push_back(b);
-							colours.push_back((unsigned char)(ao[i] * 255.0f));
+							u[0] = 1; u[1] = 0; u[2] = 0;
+							v[0] = 0; v[1] = 1; v[2] = 0;
 						}
-					}
 
-					if (!(cull & CULL_WEST))
-					{
-						const int indcs = vertices.size() / 3;
+						const unsigned int first = (unsigned int)(vertices.size() / 3);
 
-						// 0,0,0
-						normals.push_back(-1);
-						normals.push_back(0);
-						normals.push_back(0);
-						vertices.push_back(0 + x);
-						vertices.push_back(0 + _y);
-						vertices.push_back(0 + z);
-
-						// 0,0,1
-						normals.push_back(-1);
-						normals.push_back(0);
-						normals.push_back(0);
-						vertices.push_back(0 + x);
-						vertices.push_back(0 + _y);
-						vertices.push_back(1 + z);
-
-						// 0,1,1
-						normals.push_back(-1);
-						normals.push_back(0);
-						normals.push_back(0);
-						vertices.push_back(0 + x);
-						vertices.push_back(1 + _y);
-						vertices.push_back(1 + z);
-
-						// 0,1,0
-						normals.push_back(-1);
-						normals.push_back(0);
-						normals.push_back(0);
-						vertices.push_back(0 + x);
-						vertices.push_back(1 + _y);
-						vertices.push_back(0 + z);
-
-						// 0,1,2,2,3,0
-						indices.push_back(0 + indcs);
-						indices.push_back(1 + indcs);
-						indices.push_back(2 + indcs);
-						indices.push_back(2 + indcs);
-						indices.push_back(3 + indcs);
-						indices.push_back(0 + indcs);
-
-						constexpr int n[3] = { -1, 0, 0 };
-						constexpr int u[3] = { 0, 0, 1 };
-						constexpr int v[3] = { 0, 1, 0 };
-
-						const float ao[4] = {
-							GetAO(x, _y, z, n, u, v, -1, -1),
-							GetAO(x, _y, z, n, u, v, 1, -1),
-							GetAO(x, _y, z, n, u, v, 1, 1),
-							GetAO(x, _y, z, n, u, v, -1, 1),
-						};
-						for (int i = 0; i < 4; i++)
+						for (int k = 0; k < 4; k++)
 						{
+							const size_t vi = (q * 4 + k) * 3;
+							const float lx = mesh.vertices[vi];
+							const float ly = mesh.vertices[vi + 1];
+							const float lz = mesh.vertices[vi + 2];
+
+							vertices.push_back(x + lx);
+							vertices.push_back(_y + ly);
+							vertices.push_back(z + lz);
+
+							normals.push_back(nrm[0]);
+							normals.push_back(nrm[1]);
+							normals.push_back(nrm[2]);
+
+							// which end of each in-plane axis this corner sits on
+							const int su = (lx * u[0] + ly * u[1] + lz * u[2]) >= 0.5f ? 1 : -1;
+							const int sv = (lx * v[0] + ly * v[1] + lz * v[2]) >= 0.5f ? 1 : -1;
+
+							const float ao = mesh.allow_ao ? GetAO(x, _y, z, n, u, v, su, sv) : 1.0f;
+
 							colours.push_back(r);
 							colours.push_back(g);
 							colours.push_back(b);
-							colours.push_back((unsigned char)(ao[i] * 255.0f));
+							colours.push_back((unsigned char)(ao * 255.0f));
 						}
-					}
 
-					if (!(cull & CULL_UP))
-					{
-						const int indcs = vertices.size() / 3;
-
-						// 0,1,0
-						normals.push_back(0 + x);
-						normals.push_back(1 + _y);
-						normals.push_back(0 + z);
-						vertices.push_back(0 + x);
-						vertices.push_back(1 + _y);
-						vertices.push_back(0 + z);
-
-						// 0,1,1
-						normals.push_back(0 + x);
-						normals.push_back(1 + _y);
-						normals.push_back(1 + z);
-						vertices.push_back(0 + x);
-						vertices.push_back(1 + _y);
-						vertices.push_back(1 + z);
-
-						// 1,1,1
-						normals.push_back(1 + x);
-						normals.push_back(1 + _y);
-						normals.push_back(1 + z);
-						vertices.push_back(1 + x);
-						vertices.push_back(1 + _y);
-						vertices.push_back(1 + z);
-
-						// 1,1,0
-						normals.push_back(1 + x);
-						normals.push_back(1 + _y);
-						normals.push_back(0 + z);
-						vertices.push_back(1 + x);
-						vertices.push_back(1 + _y);
-						vertices.push_back(0 + z);
-
-						// 0,1,2,2,3,0
-						indices.push_back(0 + indcs);
-						indices.push_back(1 + indcs);
-						indices.push_back(2 + indcs);
-						indices.push_back(2 + indcs);
-						indices.push_back(3 + indcs);
-						indices.push_back(0 + indcs);
-
-						constexpr int n[3] = { 0, 1, 0 };
-						constexpr int u[3] = { 1, 0, 0 };
-						constexpr int v[3] = { 0, 0, 1 };
-
-						const float ao[4] = {
-							GetAO(x, _y, z, n, u, v, -1, -1),
-							GetAO(x, _y, z, n, u, v, -1, 1),
-							GetAO(x, _y, z, n, u, v, 1, 1),
-							GetAO(x, _y, z, n, u, v, 1, -1),
-						};
-						for (int i = 0; i < 4; i++)
+						// six indices per quad, rebased onto this quad's first vertex
+						for (int i = 0; i < 6; i++)
 						{
-							colours.push_back(r);
-							colours.push_back(g);
-							colours.push_back(b);
-							colours.push_back((unsigned char)(ao[i] * 255.0f));
-						}
-					}
-
-					if (!(cull & CULL_DOWN))
-					{
-						const int indcs = vertices.size() / 3;
-
-						// 0,0,0
-						normals.push_back(0 + x);
-						normals.push_back(0 + _y);
-						normals.push_back(0 + z);
-						vertices.push_back(0 + x);
-						vertices.push_back(0 + _y);
-						vertices.push_back(0 + z);
-
-						// 1,0,0
-						normals.push_back(1 + x);
-						normals.push_back(0 + _y);
-						normals.push_back(0 + z);
-						vertices.push_back(1 + x);
-						vertices.push_back(0 + _y);
-						vertices.push_back(0 + z);
-
-						// 1,0,1
-						normals.push_back(1 + x);
-						normals.push_back(0 + _y);
-						normals.push_back(1 + z);
-						vertices.push_back(1 + x);
-						vertices.push_back(0 + _y);
-						vertices.push_back(1 + z);
-
-						// 0,0,1
-						normals.push_back(0 + x);
-						normals.push_back(0 + _y);
-						normals.push_back(1 + z);
-						vertices.push_back(0 + x);
-						vertices.push_back(0 + _y);
-						vertices.push_back(1 + z);
-
-						// 0,1,2,2,3,0
-						indices.push_back(0 + indcs);
-						indices.push_back(1 + indcs);
-						indices.push_back(2 + indcs);
-						indices.push_back(2 + indcs);
-						indices.push_back(3 + indcs);
-						indices.push_back(0 + indcs);
-
-						constexpr int n[3] = { 0, -1, 0 };
-						constexpr int u[3] = { 1, 0, 0 };
-						constexpr int v[3] = { 0, 0, 1 };
-
-						const float ao[4] = {
-							GetAO(x, _y, z, n, u, v, -1, -1),
-							GetAO(x, _y, z, n, u, v, 1, -1),
-							GetAO(x, _y, z, n, u, v, 1, 1),
-							GetAO(x, _y, z, n, u, v, -1, 1),
-						};
-						for (int i = 0; i < 4; i++)
-						{
-							colours.push_back(r);
-							colours.push_back(g);
-							colours.push_back(b);
-							colours.push_back((unsigned char)(ao[i] * 255.0f));
+							indices.push_back(first + (mesh.indices[q * 6 + i] - (unsigned int)(q * 4)));
 						}
 					}
 				}
 			}
 		}
 
-		Mesh mesh{};
+		// expand indices into plain triangles, no index is limited to 16 bits
+		Mesh mesh { };
 		mesh.vertexCount = (int)indices.size();
 		mesh.triangleCount = (int)indices.size() / 3;
 		mesh.vertices = (float*)MemAlloc(indices.size() * 3 * sizeof(float));
@@ -591,13 +336,7 @@ void Chunk::GenerateMesh()
 			}
 		}
 
-		vertices.clear();
-		indices.clear();
-		normals.clear();
-		colours.clear();
-
 		subchunk.subchunk_mesh = mesh;
-
 		UploadMesh(&subchunk.subchunk_mesh, false);
 	}
 
@@ -614,7 +353,7 @@ void Chunk::GenerateModel()
 		if (subchunk.subchunk_mesh.vertexCount == 0) continue;
 
 		subchunk.subchunk_model = LoadModelFromMesh(subchunk.subchunk_mesh);
-		subchunk.subchunk_mesh = Mesh{};
+		subchunk.subchunk_mesh = Mesh { };
 		subchunk.subchunk_model.materials[0].shader = PostProcessing::GetTerrainShader();
 	}
 
@@ -631,7 +370,6 @@ Model* Chunk::GetModel(int subchunk)
 static block_data null_block =
 {
 	.type = BLOCK_AIR,
-	.state = BLOCK_RED
 };
 block_data& Chunk::GetBlock(Vector3 Relative)
 {
@@ -682,7 +420,8 @@ bool Chunk::IsSolidAt(int x, int y, int z)
 		return neighbours[0]->IsSolidAt(x, y, z - subchunk_size);
 	}
 
-	return subchunks[y / subchunk_size].blocks[x][y % subchunk_size][z].type != BLOCK_AIR;
+	block_data& b = subchunks[y / subchunk_size].blocks[x][y % subchunk_size][z];
+	return b.type != BLOCK_AIR && !b.transparent;
 }
 
 float Chunk::GetAO(int x, int y, int z, const int n[3], const int u[3], const int v[3], int su, int sv)

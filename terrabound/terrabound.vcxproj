@@ -150,8 +150,10 @@
     <ClCompile Include="chunk.cpp" />
     <ClCompile Include="ddaraycast.cpp" />
     <ClCompile Include="game.cpp" />
+    <ClCompile Include="player.cpp" />
     <ClCompile Include="playercamera.cpp" />
     <ClCompile Include="postprocessing.cpp" />
+    <ClCompile Include="resourcemanager.cpp" />
     <ClCompile Include="world.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -163,9 +165,15 @@
     <ClInclude Include="chunk.hpp" />
     <ClInclude Include="ddaraycast.hpp" />
     <ClInclude Include="FastNoiseLite.hpp" />
+    <ClInclude Include="player.hpp" />
     <ClInclude Include="playercamera.hpp" />
     <ClInclude Include="postprocessing.hpp" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="resourcemanager.hpp" />
     <ClInclude Include="world.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="terrabound.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

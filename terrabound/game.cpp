@@ -18,6 +18,8 @@
 #include "world.hpp"
 #include "postprocessing.hpp"
 #include "ddaraycast.hpp"
+#include "player.hpp"
+#include "rlgl.h"
 
 namespace
 {
@@ -29,6 +31,8 @@ namespace
 	Character character(player_camera);
 	// Track if cursor is enabled or not
 	bool cursor_enabled;
+	// Skybox
+	Texture2D skybox_texture;
 }
 
 int main()
@@ -46,6 +50,11 @@ int main()
 	// Set exit key to nothing so the game doesn't exit unless you
 	// quit from X button (TODO: make a quit menu button later)
 	SetExitKey(0);
+	// Set trace log to no logs for performance
+	SetTraceLogLevel(LOG_NONE);
+
+	// Initialise player, loads resources
+	Player::Initialise();
 
 	// Create terrain shader
 	PostProcessing::InitialiseTerrain();
@@ -53,17 +62,40 @@ int main()
 	// Create the world
 	World::GenerateWorld();
 
+	Mesh skybox_mesh = GenMeshCube(2.0f, 2.0f, 2.0f);
+	Model skybox = LoadModelFromMesh(skybox_mesh);
+	Shader skybox_shader = PostProcessing::GetSkyShader();
+	int sky_horizon_loc = GetShaderLocation(skybox_shader, "horizonColor");
+	int sky_zenith_loc = GetShaderLocation(skybox_shader, "zenithColor");
+	int sky_sun_loc = GetShaderLocation(skybox_shader, "sunDir");
+	skybox.materials[0].shader = skybox_shader;
+
+	Vector3 horizon = { 0.53f, 0.81f, 0.92f };
+	Vector3 zenith = { 0.25f, 0.45f, 0.85f };
+	Vector3 sun = Vector3Normalize({ -0.4f, -1.0f, -0.3f });
+
+	SetShaderValue(skybox_shader, sky_horizon_loc, &horizon, SHADER_UNIFORM_VEC3);
+	SetShaderValue(skybox_shader, sky_zenith_loc, &zenith, SHADER_UNIFORM_VEC3);
+	SetShaderValue(skybox_shader, sky_sun_loc, &sun, SHADER_UNIFORM_VEC3);
+
 	// As long as the window is still open, keep looping
 	while (!WindowShouldClose())
 	{
 		BeginDrawing();
 
 		RaycastResult result = DDARaycast::DoRaycast(player_camera.GetPosition(), player_camera.Forward());
+		const Vector3 pos = player_camera.GetPosition();
+		const Vector3 f = player_camera.Forward();
 
-		// Clear the frame to SKYBLUE colour
-		ClearBackground(SKYBLUE);
+		// Clear the frame
+		ClearBackground(BLACK);
 
 		BeginMode3D(player_camera.GetNativeCamera());
+
+		rlDisableBackfaceCulling();
+
+		DrawModel(skybox, pos, 100.0f, WHITE);
+		rlEnableBackfaceCulling();
 
 		World::Render(player_camera);
 
@@ -75,6 +107,17 @@ int main()
 			DrawCubeWires(centre, 1.01f, 1.01f, 1.01f, BLACK);
 		}
 
+		// axis gizmo, always on top
+		rlDisableDepthTest();
+
+		const Vector3 gizmo_origin = Vector3Add(player_camera.GetPosition(), player_camera.Forward());
+		DrawLine3D(gizmo_origin, Vector3Add(gizmo_origin, Vector3 { 0.15f, 0.0f, 0.0f }), RED);
+		DrawLine3D(gizmo_origin, Vector3Add(gizmo_origin, Vector3 { 0.0f, 0.15f, 0.0f }), GREEN);
+		DrawLine3D(gizmo_origin, Vector3Add(gizmo_origin, Vector3 { 0.0f, 0.0f, 0.15f }), BLUE);
+
+		rlDrawRenderBatchActive();
+		rlEnableDepthTest();
+
 		EndMode3D();
 
 		// Update camera rotation and player movement,
@@ -84,6 +127,7 @@ int main()
 			player_camera.Update();
 			character.Update();
 		}
+		Player::Update(player_camera);
 
 		// If escape is pressed, toggle cursor on/off
 		if (IsKeyPressed(KEY_ESCAPE))
@@ -92,46 +136,28 @@ int main()
 			cursor_enabled = !cursor_enabled;
 		}
 
-		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-		{
-			if (result.Hit && result.Distance <= 6)
-			{
-				World::BreakBlock(result.GlobalBlockPosition);
-			}
-		}
-
-		if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
-		{
-			if (result.Hit && result.Distance <= 6)
-			{
-				World::PlaceBlock(result.FirstVector3AlongNormal);
-			}
-		}
-
-		Vector3 f = player_camera.Forward();
-
-		float angle = atan2f(f.x, f.z) * RAD2DEG;
+		float angle = std::atan2f(f.x, f.z) * RAD2DEG;
 		if (angle < 0) angle += 360.0f;
-		if (angle >= 315.0f || angle < 45.0f)
-		{
-			DrawText("Facing north", 20, 20, 20, BLUE);
-		}
-		else if (angle >= 45.0f && angle < 135.0f)
-		{
-			DrawText("Facing east", 20, 20, 20, RED);
-		}
-		else if (angle >= 135.0f && angle < 225.0f)
-		{
-			DrawText("Facing south", 20, 20, 20, BLUE);
-		}
-		else if (angle >= 225.0f && angle < 315.0f)
-		{
-			DrawText("Facing west", 20, 20, 20, RED);
-		}
-		DrawFPS(20, 40);
+
+		const char* compass = "N";
+		if (angle >= 315.0f || angle < 45.0f) compass = "N";
+		else if (angle < 135.0f) compass = "W";
+		else if (angle < 225.0f) compass = "S";
+		else compass = "E";
+
+		DrawText(TextFormat("XYZ: %.2f / %.2f / %.2f", pos.x, pos.y, pos.z), 20, 20, 20, WHITE);
+		DrawText(TextFormat("Facing: %s (%.1f deg)", compass, angle), 20, 40, 20, WHITE);
+		DrawFPS(20, 60);
+
+		Player::DrawUI();
 
 		EndDrawing();
 	}
+
+	// Free resources
+	Player::Shutdown();
+
+	UnloadTexture(skybox_texture);
 
 	// Finished program
 	CloseWindow();

@@ -15,6 +15,7 @@
 #include "block.hpp"
 #include "raylib.h"
 #include <string>
+#include <random>
 
 constexpr int subchunk_size = 32;
 constexpr int chunk_height_subchunks = 12;
@@ -32,6 +33,8 @@ public:
 	Chunk(Vector3 position, uint64_t _seed);
 	~Chunk();
 
+	void DecorateSecondPass();
+
 	void GenerateMesh();
 	void GenerateModel();
 
@@ -41,6 +44,8 @@ public:
 	void SetNeighbour(int x, int y, Chunk* c);
 	bool IsSolidAt(int x, int y, int z); 	float GetAO(int x, int y, int z, const int n[3], const int u[3], const int v[3], int su, int sv);
 
+	bool decorated = false;
+
 private:
 	Vector3 Position;
 	Subchunk subchunks[chunk_height_subchunks];
@@ -48,4 +53,9 @@ private:
 	bool has_mesh = false;
 	bool has_model = false;
 	uint64_t seed;
+
+	float heightmap[subchunk_size][subchunk_size];
+
+	void DecorateTree(Vector3 base, std::mt19937_64& rng);
+	void DecorateBush(Vector3 base);
 };

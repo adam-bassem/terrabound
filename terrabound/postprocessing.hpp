@@ -16,4 +16,5 @@ namespace PostProcessing
 {
 	void InitialiseTerrain();
 	Shader& GetTerrainShader();
+	Shader& GetSkyShader();
 }
