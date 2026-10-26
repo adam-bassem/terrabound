@@ -73,10 +73,7 @@ int main()
 	Vector3 horizon = { 0.53f, 0.81f, 0.92f };
 	Vector3 zenith = { 0.25f, 0.45f, 0.85f };
 	Vector3 sun = Vector3Normalize({ -0.4f, -1.0f, -0.3f });
-
-	SetShaderValue(skybox_shader, sky_horizon_loc, &horizon, SHADER_UNIFORM_VEC3);
-	SetShaderValue(skybox_shader, sky_zenith_loc, &zenith, SHADER_UNIFORM_VEC3);
-	SetShaderValue(skybox_shader, sky_sun_loc, &sun, SHADER_UNIFORM_VEC3);
+	float sundir = 0.0f; // horizon
 
 	// As long as the window is still open, keep looping
 	while (!WindowShouldClose())
@@ -150,6 +147,20 @@ int main()
 		DrawFPS(20, 60);
 
 		Player::DrawUI();
+
+		// S_x = -cos(sundir)
+		// S_y = 0
+		// S_z = sin(sundir)
+		sun.x = std::cosf(sundir);
+		sun.y = -std::sinf(sundir);
+		sun.z = 0;
+		// 360 / (24 * 60) * dt
+		// 360 / (mins * min2sec) * dt
+		sundir += 0.25f * GetFrameTime() * DEG2RAD; // 24-minutes to fully rotate around the world
+
+		SetShaderValue(skybox_shader, sky_horizon_loc, &horizon, SHADER_UNIFORM_VEC3);
+		SetShaderValue(skybox_shader, sky_zenith_loc, &zenith, SHADER_UNIFORM_VEC3);
+		SetShaderValue(skybox_shader, sky_sun_loc, &sun, SHADER_UNIFORM_VEC3);
 
 		EndDrawing();
 	}

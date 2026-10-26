@@ -18,15 +18,18 @@ namespace
 		#version 330
 
 		in vec3 vertexPosition;
+		in vec2 vertexTexCoord;
 		in vec4 vertexColor;
 
 		uniform mat4 mvp;
 
+		out vec2 fragTexCoord;
 		out vec3 fragColor;
 		out float fragAO;
 
 		void main()
 		{
+			fragTexCoord = vertexTexCoord;
 			fragColor = vertexColor.rgb;
 			fragAO = vertexColor.a;
 			gl_Position = mvp * vec4(vertexPosition, 1.0);
@@ -36,14 +39,19 @@ namespace
 	const char* terrain_fs = R"(
 		#version 330
 
+		in vec2 fragTexCoord;
 		in vec3 fragColor;
 		in float fragAO;
+
+		uniform sampler2D texture0;
 
 		out vec4 finalColor;
 
 		void main()
 		{
-			finalColor = vec4(fragColor * fragAO, 1.0);
+			vec4 texel = texture(texture0, fragTexCoord);
+			if (texel.a < 0.5) discard;
+			finalColor = vec4(texel.rgb * fragColor * fragAO, 1.0);
 		}
 		)";
 

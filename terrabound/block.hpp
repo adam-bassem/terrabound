@@ -40,14 +40,20 @@ struct block_data
 	bool transparent;
 };
 
+struct UV
+{
+	float x1, y1;
+	float x2, y2;
+};
+
 struct block_mesh
 {
 	// local 0..1, 4 corners per quad, 3 floats each
 	std::vector<float> vertices;
 	// face direction, 4 per quad, 3 floats each
 	std::vector<float> normals;
-	// RGBA per corner, alpha channel is used by AO
-	std::vector<unsigned char> colours;
+	// Texture
+	std::vector<UV> texcoords;
 	// 6 per quad, values 0..3 within that quad
 	std::vector<unsigned int> indices;
 	// which neighbour hides each quad, zero means no neighbour hides it.
@@ -57,6 +63,13 @@ struct block_mesh
 	bool allow_ao = true;
 };
 
+#define GRASS_BLOCK_VARIANT_TOP 0
+#define GRASS_BLOCK_VARIANT_SIDE 1
+#define GRASS_BLOCK_VARIANT_BOTTOM 2
+
+#define TREE_LOG_VARIANT_TOP 0
+#define TREE_LOG_VARIANT_SIDE 1
+
 namespace Block
 {
 	uint32_t GetColour(block_data data);
@@ -65,4 +78,5 @@ namespace Block
 	static block_mesh CubeBlock();
 	static block_mesh PlantBlock();
 	block_data GetBlock(block_type type);
+	std::vector<UV> GetUV(block_type type, int variant);
 }

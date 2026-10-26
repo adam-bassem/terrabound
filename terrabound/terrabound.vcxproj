@@ -175,6 +175,12 @@
   <ItemGroup>
     <ResourceCompile Include="terrabound.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="atlas.png" />
+    <Image Include="heart_empty.png" />
+    <Image Include="heart_full.png" />
+    <Image Include="heart_half.png" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -237,27 +237,25 @@ block_mesh Block::GetBlockMesh(block_data& data)
 	static const block_mesh cube = CubeBlock();
 	static const block_mesh plant = PlantBlock();
 
+	block_mesh mesh;
+
 	switch (data.type)
 	{
-		case BLOCK_AIR:
-		case BLOCK_GRASS:
-		case BLOCK_DIRT:
-		case BLOCK_STONE:
-		case BLOCK_WOOD_LOG:
-		case BLOCK_TREE_LEAVES:
-		case BLOCK_BUSH_LEAVES:
-		{
-			return cube;
-		}
-
 		case BLOCK_SHORT_GRASS:
 		{
-			return plant;
+			mesh = plant;
+			break;
 		}
 
 		default:
-			return cube;
+		{
+			mesh = cube;
+			break;
+		}
 	}
+
+	mesh.texcoords = GetUV(data.type, 0);
+	return mesh;
 }
 
 block_data MakeBlock(block_type type)
@@ -294,4 +292,122 @@ block_data Block::GetBlock(block_type type)
 			return block_data { type, (block_state)0, true };
 		}
 	}
+}
+
+#define ATLAS_SIZE 256
+#define BLOCK_TEXTURE_WIDTH 16
+#define CELL_TO_UV(x) ((float)(x) * BLOCK_TEXTURE_WIDTH / (float)ATLAS_SIZE)
+
+std::vector<UV> Block::GetUV(block_type type, int variant)
+{
+	(void)variant;
+
+	static const block_mesh cube = CubeBlock();
+	static const block_mesh plant = PlantBlock();
+
+	const bool is_plant = type == BLOCK_SHORT_GRASS;
+	const block_mesh& geo = is_plant ? plant : cube;
+
+	const size_t vertex_count = geo.vertices.size() / 3;
+
+	std::vector<UV> uvs;
+	uvs.reserve(vertex_count);
+
+	for (size_t i = 0; i < vertex_count; i++)
+	{
+		const size_t face = i / 4;
+		const float* p = &geo.vertices[i * 3];
+		const float* n = &geo.normals[i * 3];
+
+		// atlas cell for this block type, grass picks by face
+		int col = 0;
+		int row = 0;
+
+		switch (type)
+		{
+			case BLOCK_GRASS:
+			{
+				if (face == 4) col = 0;
+				else if (face == 5) col = 1;
+				else col = 2;
+				break;
+			}
+
+			case BLOCK_DIRT:
+			{
+				col = 1;
+				break;
+			}
+
+			case BLOCK_STONE:
+			{
+				col = 3;
+				break;
+			}
+
+			case BLOCK_WOOD_LOG:
+			{
+				col = 4;
+				break;
+			}
+
+			case BLOCK_TREE_LEAVES:
+			{
+				col = 5;
+				break;
+			}
+
+			case BLOCK_BUSH_LEAVES:
+			{
+				col = 6;
+				break;
+			}
+
+			case BLOCK_SHORT_GRASS:
+			{
+				col = 7;
+				break;
+			}
+
+			default:
+			{
+				col = 0;
+				row = 15;
+				break;
+			}
+		}
+
+		const float x1 = CELL_TO_UV(col);
+		const float x2 = CELL_TO_UV(col + 1);
+		const float y1 = CELL_TO_UV(row);
+		const float y2 = CELL_TO_UV(row + 1);
+
+		// a runs across the face, b runs up it, both in [0, 1]
+		float a, b;
+		if (is_plant)
+		{
+			// the two diagonals run along different axes
+			a = (n[0] * n[2] < 0.0f) ? (p[0] + p[2]) * 0.5f : (1.0f - p[0] + p[2]) * 0.5f;
+			b = p[1];
+		}
+		else if (face < 2)
+		{
+			a = p[0];
+			b = p[1];
+		}
+		else if (face < 4)
+		{
+			a = p[2];
+			b = p[1];
+		}
+		else
+		{
+			a = p[0];
+			b = p[2];
+		}
+
+		uvs.push_back(UV { x1 + a * (x2 - x1), y1 + (1.0f - b) * (y2 - y1) });
+	}
+
+	return uvs;
 }

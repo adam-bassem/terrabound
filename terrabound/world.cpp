@@ -19,6 +19,7 @@
 #include <vector>
 #include <algorithm>
 #include "raymath.h"
+#include "block.hpp"
 
 namespace
 {
@@ -119,6 +120,12 @@ void World::Render(PlayerCamera& camera)
 		if (found->second->decorated) continue;
 
 		found->second->DecorateSecondPass();
+
+		for (int i = 0; i < 4; i++)
+		{
+			std::pair<int, int> nk = { x + dx[i], z + dz[i] };
+			if (chunks.count(nk)) to_remesh.insert(nk);
+		}
 		to_remesh.insert({ x, z });
 	}
 
@@ -173,6 +180,25 @@ block_data* World::GetBlock(Vector3 Global)
 	return &found->second->GetBlock({ (float)lx, (float)wy, (float)lz });
 }
 
+void World::SetBlock(Vector3 Global, block_data& data)
+{
+	const int wx = (int)std::floor(Global.x);
+	const int wy = (int)std::floor(Global.y);
+	const int wz = (int)std::floor(Global.z);
+
+	if (wy < 0 || wy >= subchunk_size * chunk_height_subchunks) return;
+
+	const int cx = (int)std::floor(wx / (float)subchunk_size);
+	const int cz = (int)std::floor(wz / (float)subchunk_size);
+
+	auto found = chunks.find({ cx, cz });
+	if (found == chunks.end() || !found->second) return;
+
+	const int lx = wx - cx * subchunk_size;
+	const int lz = wz - cz * subchunk_size;
+	found->second->SetBlock({ (float)lx, (float)wy, (float)lz }, data);
+}
+
 void World::BreakBlock(Vector3 Global)
 {
 	block_data* b = GetBlock(Global);
@@ -204,8 +230,8 @@ void World::PlaceBlock(Vector3 Global)
 	block_data* b = GetBlock(Global);
 	if (!b) return;
 
-	b->type = BLOCK_STONE;
-	b->state = (block_state)0;
+	block_data b2 = Block::GetBlock(BLOCK_STONE);
+	SetBlock(Global, b2);
 
 	const int wx = (int)std::floor(Global.x);
 	const int wy = (int)std::floor(Global.y);

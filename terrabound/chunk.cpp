@@ -15,9 +15,27 @@
 #include "FastNoiseLite.hpp"
 #include <algorithm>
 #include "postprocessing.hpp"
+#include "resourcemanager.hpp"
+
+namespace
+{
+	Texture2D world_texture;
+	bool world_texture_loaded = false;
+}
 
 Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 {
+	if (!world_texture_loaded)
+	{
+		Resource rsrc = Resources::LoadTextureFromResource(IDB_PNG5);
+		world_texture = LoadTextureFromImage(LoadImageFromMemory(".png", (const unsigned char*)rsrc.Data, rsrc.Size));
+		world_texture.mipmaps = 4;
+		GenTextureMipmaps(&world_texture);
+		SetTextureFilter(world_texture, TEXTURE_FILTER_POINT);
+		SetTextureWrap(world_texture, TEXTURE_WRAP_CLAMP);
+		world_texture_loaded = true;
+	}
+
 	FastNoiseLite heightmap_noise;
 	heightmap_noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
 	heightmap_noise.SetSeed((int)seed);
@@ -67,15 +85,6 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 				else if (y >= top - 4) b = Block::GetBlock(BLOCK_DIRT);
 				else b = Block::GetBlock(BLOCK_STONE);
 
-				uint32_t h = (uint32_t)(position.x + x) * 0x27d4eb2dU
-					^ (uint32_t)y * 0x165667b1U
-					^ (uint32_t)(position.z + z) * 0x9e3779b9U
-					^ (uint32_t)seed;
-				h ^= h >> 15;
-				h *= 0x2c1b3c6dU;
-				h ^= h >> 12;
-				b.state = (block_state)(h % 3);
-
 				if (y < 1 || y > top - 5) continue;
 
 				const float fy = (float)y;
@@ -103,7 +112,7 @@ void Chunk::DecorateTree(Vector3 base, std::mt19937_64& rng)
 	{
 		if (x < 0 || x >= subchunk_size || z < 0 || z >= subchunk_size) return;
 		if (y < 0 || y >= max_y) return;
-		GetBlock(Vector3 { (float)x, (float)y, (float)z }) = Block::GetBlock(type);
+		SetBlock(Vector3 { (float)x, (float)y, (float)z }, Block::GetBlock(type));
 	};
 
 	for (int dy = h - 1; dy <= h; dy++)
@@ -143,7 +152,7 @@ void Chunk::DecorateBush(Vector3 base)
 	{
 		if (x < 0 || x >= subchunk_size || z < 0 || z >= subchunk_size) return;
 		if (y < 0 || y >= max_y) return;
-		GetBlock(Vector3 { (float)x, (float)y, (float)z }) = Block::GetBlock(type);
+		SetBlock(Vector3 { (float)x, (float)y, (float)z }, Block::GetBlock(type));
 	};
 
 	// 3x3 at the surface level, one block on top
@@ -174,16 +183,24 @@ void Chunk::DecorateSecondPass()
 		{
 			const int r = roll(rng);
 
-			if (r < 8) DecorateTree(Vector3 { (float)x, heightmap[x][z], (float)z }, rng); // 0.8% tree
-			else if (r < 32) DecorateBush(Vector3 { (float)x, heightmap[x][z], (float)z }); // 3.2% bush
-			else if (r < 60) GetBlock(Vector3 { (float)x, heightmap[x][z], (float)z }) = Block::GetBlock(BLOCK_SHORT_GRASS); // 6% short grass
+			if (r < 8) DecorateTree(Vector3 { (float)x, (float)heightmap[x][z], (float)z }, rng); // 0.8% tree
+			else if (r < 32) DecorateBush(Vector3 { (float)x, (float)heightmap[x][z], (float)z }); // 3.2% bush
+			else if (r < 60) SetBlock(Vector3 { (float)x, (float)heightmap[x][z], (float)z }, Block::GetBlock(BLOCK_SHORT_GRASS)); // 6% short grass
 		}
 	}
 }
 
 static void ReleaseSubchunk(Subchunk& subchunk)
 {
-	if (subchunk.subchunk_model.meshes) UnloadModel(subchunk.subchunk_model);
+	if (subchunk.subchunk_model.meshes)
+	{
+		// the atlas is shared between chunks, so detach it before UnloadModel frees the material textures
+		if (subchunk.subchunk_model.materials)
+		{
+			subchunk.subchunk_model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = Texture2D { };
+		}
+		UnloadModel(subchunk.subchunk_model);
+	}
 	subchunk.subchunk_model = Model { };
 
 	if (subchunk.subchunk_mesh.vertices) UnloadMesh(subchunk.subchunk_mesh);
@@ -196,6 +213,8 @@ Chunk::~Chunk()
 	{
 		ReleaseSubchunk(subchunks[i]);
 	}
+
+	// world_texture is shared by every chunk, so it is not unloaded here
 }
 
 #define CULL_NORTH 0b00000001
@@ -207,20 +226,21 @@ Chunk::~Chunk()
 
 void Chunk::GenerateMesh()
 {
-	for (int i = 0; i < chunk_height_subchunks; i++)
-	{
-		ReleaseSubchunk(subchunks[i]);
-	}
-	has_model = false;
-
 	for (int subchunk_i = 0; subchunk_i < chunk_height_subchunks; subchunk_i++)
 	{
+		Subchunk& subchunk = subchunks[subchunk_i];
+
+		if (!subchunk.is_dirty) continue;
+		subchunk.is_dirty = false;
+
+		ReleaseSubchunk(subchunk);
+		has_model = false;
+
 		std::vector<float> vertices;
 		std::vector<float> normals;
+		std::vector<float> texcoords;
 		std::vector<unsigned char> colours;
 		std::vector<unsigned int> indices;
-
-		Subchunk& subchunk = subchunks[subchunk_i];
 
 		for (int x = 0; x < subchunk_size; x++)
 		{
@@ -232,12 +252,6 @@ void Chunk::GenerateMesh()
 					if (this_block.type == BLOCK_AIR) continue;
 
 					const int _y = y + (subchunk_size * subchunk_i);
-
-					// colour comes from the block, not the mesh
-					const uint32_t colour = Block::GetColour(this_block);
-					const uint8_t r = (colour >> 16) & 0xFF;
-					const uint8_t g = (colour >> 8) & 0xFF;
-					const uint8_t b = colour & 0xFF;
 
 					uint8_t cull = 0;
 					if (IsSolidAt(x - 1, _y, z)) cull |= CULL_WEST;
@@ -256,7 +270,6 @@ void Chunk::GenerateMesh()
 						const float* nrm = &mesh.normals[q * 12];
 						const int n[3] = { (int)nrm[0], (int)nrm[1], (int)nrm[2] };
 
-						// the two directions across the face, the normal doesn't point along them
 						int u[3], v[3];
 						if (n[0] != 0)
 						{
@@ -291,19 +304,22 @@ void Chunk::GenerateMesh()
 							normals.push_back(nrm[1]);
 							normals.push_back(nrm[2]);
 
-							// which end of each in-plane axis this corner sits on
+							const UV& uv = mesh.texcoords[q * 4 + k];
+							texcoords.push_back(uv.x1);
+							texcoords.push_back(uv.y1);
+
 							const int su = (lx * u[0] + ly * u[1] + lz * u[2]) >= 0.5f ? 1 : -1;
 							const int sv = (lx * v[0] + ly * v[1] + lz * v[2]) >= 0.5f ? 1 : -1;
 
 							const float ao = mesh.allow_ao ? GetAO(x, _y, z, n, u, v, su, sv) : 1.0f;
 
-							colours.push_back(r);
-							colours.push_back(g);
-							colours.push_back(b);
+							// colour comes from the atlas, so rgb is white and alpha carries AO
+							colours.push_back(255);
+							colours.push_back(255);
+							colours.push_back(255);
 							colours.push_back((unsigned char)(ao * 255.0f));
 						}
 
-						// six indices per quad, rebased onto this quad's first vertex
 						for (int i = 0; i < 6; i++)
 						{
 							indices.push_back(first + (mesh.indices[q * 6 + i] - (unsigned int)(q * 4)));
@@ -313,12 +329,12 @@ void Chunk::GenerateMesh()
 			}
 		}
 
-		// expand indices into plain triangles, no index is limited to 16 bits
 		Mesh mesh { };
 		mesh.vertexCount = (int)indices.size();
 		mesh.triangleCount = (int)indices.size() / 3;
 		mesh.vertices = (float*)MemAlloc(indices.size() * 3 * sizeof(float));
 		mesh.normals = (float*)MemAlloc(indices.size() * 3 * sizeof(float));
+		mesh.texcoords = (float*)MemAlloc(indices.size() * 2 * sizeof(float));
 		mesh.colors = (unsigned char*)MemAlloc(indices.size() * 4 * sizeof(unsigned char));
 		mesh.indices = nullptr;
 
@@ -329,6 +345,10 @@ void Chunk::GenerateMesh()
 			{
 				mesh.vertices[i * 3 + c] = vertices[k * 3 + c];
 				mesh.normals[i * 3 + c] = normals[k * 3 + c];
+			}
+			for (int c = 0; c < 2; c++)
+			{
+				mesh.texcoords[i * 2 + c] = texcoords[k * 2 + c];
 			}
 			for (int c = 0; c < 4; c++)
 			{
@@ -345,16 +365,16 @@ void Chunk::GenerateMesh()
 
 void Chunk::GenerateModel()
 {
-	if (!has_mesh || has_model) return;
-
 	for (int i = 0; i < chunk_height_subchunks; i++)
 	{
 		Subchunk& subchunk = subchunks[i];
+
 		if (subchunk.subchunk_mesh.vertexCount == 0) continue;
 
 		subchunk.subchunk_model = LoadModelFromMesh(subchunk.subchunk_mesh);
 		subchunk.subchunk_mesh = Mesh { };
 		subchunk.subchunk_model.materials[0].shader = PostProcessing::GetTerrainShader();
+		subchunk.subchunk_model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = world_texture;
 	}
 
 	has_model = true;
@@ -362,8 +382,8 @@ void Chunk::GenerateModel()
 
 Model* Chunk::GetModel(int subchunk)
 {
-	if (!has_model) return nullptr;
 	if (subchunk < 0 || subchunk >= chunk_height_subchunks) return nullptr;
+	if (!subchunks[subchunk].subchunk_model.meshes) return nullptr;
 	return &subchunks[subchunk].subchunk_model;
 }
 
@@ -384,44 +404,100 @@ block_data& Chunk::GetBlock(Vector3 Relative)
 	return subchunks[y / subchunk_size].blocks[x][y % subchunk_size][z];
 }
 
+void Chunk::SetBlock(Vector3 Relative, block_data data)
+{
+	const int x = (int)Relative.x;
+	const int y = (int)Relative.y;
+	const int z = (int)Relative.z;
+
+	if (x < 0 || x >= subchunk_size || z < 0 || z >= subchunk_size) return;
+	if (y < 0 || y >= subchunk_size * chunk_height_subchunks) return;
+
+	subchunks[y / subchunk_size].blocks[x][y % subchunk_size][z] = data;
+
+	for (int dx = -1; dx <= 1; dx++)
+	{
+		for (int dy = -1; dy <= 1; dy++)
+		{
+			for (int dz = -1; dz <= 1; dz++)
+			{
+				MarkDirtyAt(x + dx, y + dy, z + dz);
+			}
+		}
+	}
+}
+
+void Chunk::MarkDirtyAt(int x, int y, int z)
+{
+	if (y < 0 || y >= subchunk_size * chunk_height_subchunks) return;
+
+	if (x < 0)
+	{
+		if (neighbours[3]) neighbours[3]->MarkDirtyAt(x + subchunk_size, y, z);
+		return;
+	}
+
+	if (x >= subchunk_size)
+	{
+		if (neighbours[2]) neighbours[2]->MarkDirtyAt(x - subchunk_size, y, z);
+		return;
+	}
+
+	if (z < 0)
+	{
+		if (neighbours[1]) neighbours[1]->MarkDirtyAt(x, y, z + subchunk_size);
+		return;
+	}
+
+	if (z >= subchunk_size)
+	{
+		if (neighbours[0]) neighbours[0]->MarkDirtyAt(x, y, z - subchunk_size);
+		return;
+	}
+
+	subchunks[y / subchunk_size].is_dirty = true;
+}
+
 void Chunk::SetNeighbour(int x, int y, Chunk* c)
 {
 	if (x == 0 && y == 1) neighbours[0] = c; // N (+z)
 	else if (x == 0 && y == -1) neighbours[1] = c; // S (-z)
 	else if (x == 1 && y == 0) neighbours[2] = c; // E (+x)
 	else if (x == -1 && y == 0) neighbours[3] = c; // W (-x)
+
+	for (Subchunk& s : subchunks) s.is_dirty = true;
 }
 
-bool Chunk::IsSolidAt(int x, int y, int z)
+bool Chunk::IsSolidAt(int x, int y, int z, bool transparent_is_solid)
 {
 	if (y < 0 || y >= subchunk_size * chunk_height_subchunks) return false;
 
 	if (x < 0)
 	{
 		if (!neighbours[3]) return false;
-		return neighbours[3]->IsSolidAt(x + subchunk_size, y, z);
+		return neighbours[3]->IsSolidAt(x + subchunk_size, y, z, transparent_is_solid);
 	}
 
 	if (x >= subchunk_size)
 	{
 		if (!neighbours[2]) return false;
-		return neighbours[2]->IsSolidAt(x - subchunk_size, y, z);
+		return neighbours[2]->IsSolidAt(x - subchunk_size, y, z, transparent_is_solid);
 	}
 
 	if (z < 0)
 	{
 		if (!neighbours[1]) return false;
-		return neighbours[1]->IsSolidAt(x, y, z + subchunk_size);
+		return neighbours[1]->IsSolidAt(x, y, z + subchunk_size, transparent_is_solid);
 	}
 
 	if (z >= subchunk_size)
 	{
 		if (!neighbours[0]) return false;
-		return neighbours[0]->IsSolidAt(x, y, z - subchunk_size);
+		return neighbours[0]->IsSolidAt(x, y, z - subchunk_size, transparent_is_solid);
 	}
 
 	block_data& b = subchunks[y / subchunk_size].blocks[x][y % subchunk_size][z];
-	return b.type != BLOCK_AIR && !b.transparent;
+	return b.type != BLOCK_AIR && (transparent_is_solid || !b.transparent);
 }
 
 float Chunk::GetAO(int x, int y, int z, const int n[3], const int u[3], const int v[3], int su, int sv)
@@ -430,11 +506,11 @@ float Chunk::GetAO(int x, int y, int z, const int n[3], const int u[3], const in
 	const int fy = y + n[1];
 	const int fz = z + n[2];
 
-	const bool side1 = IsSolidAt(fx + u[0] * su, fy + u[1] * su, fz + u[2] * su);
-	const bool side2 = IsSolidAt(fx + v[0] * sv, fy + v[1] * sv, fz + v[2] * sv);
+	const bool side1 = IsSolidAt(fx + u[0] * su, fy + u[1] * su, fz + u[2] * su, true);
+	const bool side2 = IsSolidAt(fx + v[0] * sv, fy + v[1] * sv, fz + v[2] * sv, true);
 	const bool corner = IsSolidAt(fx + u[0] * su + v[0] * sv,
 		fy + u[1] * su + v[1] * sv,
-		fz + u[2] * su + v[2] * sv);
+		fz + u[2] * su + v[2] * sv, true);
 
 	int level;
 	if (side1 && side2) level = 3;

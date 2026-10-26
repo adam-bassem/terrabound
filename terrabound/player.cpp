@@ -112,7 +112,7 @@ void Player::Update(PlayerCamera& camera)
 	}
 
 	// Place
-	if (in_reach && rmbDuration >= 0.25)
+	if (in_reach && rmbDuration >= 0.125)
 	{
 		World::PlaceBlock(raycast.FirstVector3AlongNormal);
 		rmbDuration = 0.0;
