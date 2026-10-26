@@ -406,7 +406,7 @@ void Chunk::GenerateModel()
 		if (subchunk.subchunk_mesh.vertexCount == 0) continue;
 
 		subchunk.subchunk_model = LoadModelFromMesh(subchunk.subchunk_mesh);
-		subchunk.subchunk_model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("tiles_atlas.png");
+		subchunk.subchunk_model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = LoadTexture("res/tiles_atlas.png");
 		subchunk.subchunk_mesh = Mesh { };
 		subchunk.subchunk_model.materials[0].shader = PostProcessing::GetTerrainShader();
 	}

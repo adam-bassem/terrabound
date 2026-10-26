@@ -191,10 +191,10 @@ void Player::Initialise()
 	full_heart = LoadHeart(IDB_PNG2);
 
 
-	itemSelectionBar = LoadQuickItemSelectionBar("quick_item_bar.png");
-	itemSelectionHighlighter = LoadQuickItemSelectionHighlighter("selection_highlighter.png");
+	itemSelectionBar = LoadQuickItemSelectionBar("res/gui/quick_item_bar.png");
+	itemSelectionHighlighter = LoadQuickItemSelectionHighlighter("res/gui/selection_highlighter.png");
 
-	playerInventory = LoadInventory("player_inventory.png");
+	playerInventory = LoadInventory("res/gui/player_inventory.png");
 	//block3d = Load3dBlock();
 	lastRecordedTime = GetTime();
 

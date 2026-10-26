@@ -85,7 +85,7 @@ int main()
 
 	// As long as the window is still open, keep looping
 
-	Texture2D tex = LoadTexture("tiles_atlas.png");
+	Texture2D tex = LoadTexture("res/tiles_atlas.png");
 	SetTextureFilter(tex, TEXTURE_FILTER_POINT);
 
 	bool isInInventory = false;
