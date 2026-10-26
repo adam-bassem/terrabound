@@ -155,6 +155,7 @@
     <ClCompile Include="postprocessing.cpp" />
     <ClCompile Include="resourcemanager.cpp" />
     <ClCompile Include="world.cpp" />
+    <ClCompile Include="WorldDecorations.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\raylib.h" />
@@ -171,9 +172,16 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="resourcemanager.hpp" />
     <ClInclude Include="world.hpp" />
+    <ClInclude Include="WorldDecorations.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="terrabound.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="atlas.png" />
+    <Image Include="heart_empty.png" />
+    <Image Include="heart_full.png" />
+    <Image Include="heart_half.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

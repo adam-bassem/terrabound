@@ -18,9 +18,12 @@
 
 namespace World
 {
+
+
 	void GenerateWorld();
 	void Render(PlayerCamera& camera);
 	block_data* GetBlock(Vector3 Global);
+	void SetBlock(Vector3 Global, block_data& data);
 	void BreakBlock(Vector3 Global);
-	void PlaceBlock(Vector3 Global);
+	void PlaceBlock(Vector3 Global, block_data block);
 }

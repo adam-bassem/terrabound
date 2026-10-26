@@ -16,6 +16,7 @@
 #include "raylib.h"
 #include <string>
 #include <random>
+//#include "WorldDecorations.h" //Doesn't work
 
 constexpr int subchunk_size = 32;
 constexpr int chunk_height_subchunks = 12;
@@ -25,6 +26,7 @@ struct Subchunk
 	block_data blocks[subchunk_size][subchunk_size][subchunk_size] { };
 	Mesh subchunk_mesh { };
 	Model subchunk_model { };
+	bool is_dirty = true;
 };
 
 class Chunk
@@ -39,23 +41,28 @@ public:
 	void GenerateModel();
 
 	block_data& GetBlock(Vector3 Relative);
+	void SetBlock(Vector3 Relative, block_data data);
 	Model* GetModel(int subchunk);
 
 	void SetNeighbour(int x, int y, Chunk* c);
-	bool IsSolidAt(int x, int y, int z); 	float GetAO(int x, int y, int z, const int n[3], const int u[3], const int v[3], int su, int sv);
+	bool IsSolidAt(int x, int y, int z, bool transparent_is_solid = false);
+	float GetAO(int x, int y, int z, const int n[3], const int u[3], const int v[3], int su, int sv);
 
 	bool decorated = false;
 
 private:
+	uint64_t seed;
 	Vector3 Position;
 	Subchunk subchunks[chunk_height_subchunks];
 	Chunk* neighbours[4] = { };
 	bool has_mesh = false;
 	bool has_model = false;
-	uint64_t seed;
 
-	float heightmap[subchunk_size][subchunk_size];
+	int heightmap[subchunk_size][subchunk_size];
 
+	void MarkDirtyAt(int x, int y, int z);
 	void DecorateTree(Vector3 base, std::mt19937_64& rng);
+	void DecoratePineTree(Vector3 base, std::mt19937_64& rng);
 	void DecorateBush(Vector3 base);
+	void decorateSkyIsland(Vector3 base, std::mt19937_64& rng);
 };
