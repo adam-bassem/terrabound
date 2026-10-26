@@ -103,8 +103,19 @@ int main()
 			Vector3 centre = { result.GlobalBlockPosition.x + 0.5f,
 							   result.GlobalBlockPosition.y + 0.5f,
 							   result.GlobalBlockPosition.z + 0.5f };
+
+		//	block_data data = *World::GetBlock(result.GlobalBlockPosition);
+			
+			
 			DrawCubeWires(centre, 1.01f, 1.01f, 1.01f, BLACK);
 		}
+
+		//Vector3 centre = { result.GlobalBlockPosition.x + 0.5f,
+		//					   result.GlobalBlockPosition.y + 0.5f,
+		//					   result.GlobalBlockPosition.z + 0.5f };
+
+		//block_data data = *World::GetBlock(result.GlobalBlockPosition);
+		//DrawText(TextFormat("%i", data.type), 10, 70, 30, GREEN); //Trying to figure a way to show currently looked block.
 
 		// axis gizmo, always on top
 		rlDisableDepthTest();

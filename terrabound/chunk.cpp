@@ -64,6 +64,26 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 	cave_b_spag.SetFrequency(0.03f);
 	cave_b_spag.SetFractalType(FastNoiseLite::FractalType_None);
 
+	FastNoiseLite coal_ore_noise;
+	coal_ore_noise.SetNoiseType(FastNoiseLite::NoiseType_Value);
+	coal_ore_noise.SetSeed((int)seed + 3247);
+	coal_ore_noise.SetFrequency(0.005f);
+	coal_ore_noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+
+
+	FastNoiseLite iron_ore_noise;
+	iron_ore_noise.SetNoiseType(FastNoiseLite::NoiseType_Value);
+	iron_ore_noise.SetSeed((int)seed + 2747);
+	iron_ore_noise.SetFrequency(0.003f);
+	iron_ore_noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+
+	FastNoiseLite diamond_ore_noise;
+	iron_ore_noise.SetNoiseType(FastNoiseLite::NoiseType_Value);
+	iron_ore_noise.SetSeed((int)seed + 934);
+	iron_ore_noise.SetFrequency(0.003f);
+	iron_ore_noise.SetFractalType(FastNoiseLite::FractalType_FBm);
+
+
 	constexpr float terrain_base = 96.0f;
 	constexpr float terrain_amp = 120.0f;
 
@@ -71,6 +91,7 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 	//constexpr float terrain_amp = 12.0f;
 
 	constexpr float cave_threshold = 0.18f;
+	constexpr float cave_ore_threshold = 0.18f;
 
 	
 
@@ -94,31 +115,54 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 				if (y == top - 1) b = Block::GetBlock(BLOCK_GRASS);
 				else if (y >= top - 4) b = Block::GetBlock(BLOCK_DIRT);
 				else if (y <= 2) b = Block::GetBlock(BLOCK_BEDROCK);
-				//else if (y > 2 && y < (top - 5)) {
 
-				//
-				//	if (b.type == BLOCK_STONE) {
-				//		b.type = BLOCK_COAL_ORE;
-				//		SetBlock(Vector3(wx + 1, y + 1, wz + 1), b);
-				//	}
-
-				//	//if (x % 32 == 0 || z % 44 == 0) {
-				//	//	b = Block::GetBlock(BLOCK_COAL_ORE);
-				//	//}
-
-				//	//if (x % 20 == 0 || z % 27 == 0) {
-				//	//	b = Block::GetBlock(BLOCK_IRON_ORE);
-				//	//}
-				//}
+	
 
 				else b = Block::GetBlock(BLOCK_STONE);
 
 				if (y < 1 || y > top - 5) continue;
-
 				const float fy = (float)y;
 				if (fabsf(cave_a_spag.GetNoise(wx, fy, wz)) >= cave_threshold) continue;
 				if (fabsf(cave_b_spag.GetNoise(wx, fy, wz)) >= cave_threshold) continue;
+			
+				if (coal_ore_noise.GetNoise(wx, (float)y, wz) >= cave_ore_threshold) {
+					b.type = BLOCK_COAL_ORE;
+					continue;
+				}
+				if (y < 40) {
+					if (iron_ore_noise.GetNoise(wx, (float)y, wz) >= 0.02) {
+					b.type = BLOCK_GOLD_ORE;
+					continue;
+					}
+				}
+				else {
+					if (iron_ore_noise.GetNoise(wx, (float)y, wz) >= 0.02) {
+						b.type = BLOCK_IRON_ORE;
+						continue;
+					}
+				}
 
+				//Diamond ore
+				if (y < 30 && y > 15) {
+					if (diamond_ore_noise.GetNoise(wx, (float)y, wz) >= 0.02) {
+						b.type = BLOCK_DIAMOND_ORE;
+						continue;
+					}
+				}
+				//Titanium Ore
+				else if( y <20) {
+					if (diamond_ore_noise.GetNoise(wx, (float)y, wz) >= 0.02) {
+						if (b.type == BLOCK_DIAMOND_ORE || b.type == BLOCK_STONE) {
+							b.type = BLOCK_TITANIUM_ORE;
+						}
+					
+						continue;
+					}
+				}
+
+				
+			
+		
 				b.type = BLOCK_AIR;
 			}
 		}
@@ -567,6 +611,9 @@ void Chunk::GenerateMesh()
 				for (int z = 0; z < subchunk_size; z++)
 				{
 					block_data& this_block = subchunk.blocks[x][y][z];
+
+
+
 					if (this_block.type == BLOCK_AIR) continue;
 
 					const int _y = y + (subchunk_size * subchunk_i);

@@ -381,8 +381,11 @@ block_data Block::GetBlock(block_type type)
 		case BLOCK_ROCK:
 		case BLOCK_DRY_FARLAND:
 		case BLOCK_MOIST_FARLAND:
-		//case BLOCK_COAL_ORE:
-		//case BLOCK_IRON_ORE:
+		case BLOCK_COAL_ORE:
+		case BLOCK_IRON_ORE:
+		case BLOCK_GOLD_ORE:
+		case BLOCK_TITANIUM_ORE:
+		case BLOCK_DIAMOND_ORE:
 		case BLOCK_WOOD_PLANK:
 		case BLOCK_CLAY:
 		case BLOCK_MOSSY_ROCK:
@@ -523,6 +526,12 @@ std::vector<UV> Block::GetUV(block_type type, int variant)
 		case BLOCK_COAL_ORE: { col = 4; row = 0; break; }
 
 		case BLOCK_IRON_ORE: { col = 5; row = 0; break; }
+
+		case BLOCK_GOLD_ORE: { col = 0; row = 2; break; }
+
+		case BLOCK_DIAMOND_ORE: { col = 1; row = 2; break; }
+
+		case BLOCK_TITANIUM_ORE: { col = 2; row = 2; break; }
 
 		case BLOCK_SNOW: { col = 10; row = 0; break; }
 
