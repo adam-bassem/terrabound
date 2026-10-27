@@ -238,7 +238,7 @@ void Chunk::decorateSkyIsland(Vector3 base, std::mt19937_64& rng) {
 	//Generate the Snow blocks or "cloud like blocks"
 	//lower snow
 
-	int baseHeight = h;
+	int baseHeight = heightmap[bx][bz] + h; //Fix for the sky islands generating in the ground
 
 
 	for (int dx = -2; dx <= 3; dx++) {

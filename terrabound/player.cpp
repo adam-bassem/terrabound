@@ -156,6 +156,8 @@ void Player::drawInventory() { //Draw inventory -Alex
 	const int armorTextX = 585;
 	const int armorTextY = 85;
 
+	//World::GetBlock(Vector3(0, 90, 0));
+
 	DrawTextureEx(playerInventory, Vector2{ (float)x, (float)y - 27 }, 0, 3, WHITE);
 	DrawText("Inventory", x + 105, y + 35, 30, DARKGRAY);
 	DrawText("Inventory", x + 107, y + 37, 30, WHITE);
@@ -370,15 +372,12 @@ void Player::Update(PlayerCamera& camera)
 		hasDied = false;
 		health = std::max(0, health - 1);
 	}
+}
 
-	//if (health <= 0 ) {
-	//	health = max_health;
-	//	hasDied = true;
-	//}
+int Player::getHealth() {
+	return health;
+}
 
-	//if (hasDied) {
-	//	camera.SetPosition(Vector3(0, 120, 0));
-	//	//hasDied = false;
-	//}
-
+void Player::setHealth(int amount) {
+	health = amount;
 }

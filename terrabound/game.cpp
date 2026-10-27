@@ -10,7 +10,9 @@
  * =============================================================================
  */
 
+
 #include "raylib.h"
+#include <iostream>
 #include "playercamera.hpp"
 #include "character.hpp"
 #include "chunk.hpp"
@@ -44,6 +46,12 @@ int main()
 	SetConfigFlags(FLAG_MSAA_4X_HINT | FLAG_VSYNC_HINT);
 	// Create a 1280x720 window titled "terrabound"
 	InitWindow(1280, 720, "terrabound");
+
+	bool fullScreen = false;
+	if (fullScreen) {
+		ToggleFullscreen();
+	}
+
 	// Limit FPS to current monitor's refresh rate
 	SetTargetFPS(GetMonitorRefreshRate(GetCurrentMonitor()));
 	// Disable cursor so it doesn't exit outside window
@@ -78,6 +86,9 @@ int main()
 	float sundir = 0.0f; // horizon
 	bool isInInventory = false;
 	// As long as the window is still open, keep looping
+	int invul = 0;
+	int screenShotCount = 0;
+	block_data* data = NULL;
 	while (!WindowShouldClose())
 	{
 		BeginDrawing();
@@ -104,19 +115,69 @@ int main()
 							   result.GlobalBlockPosition.y + 0.5f,
 							   result.GlobalBlockPosition.z + 0.5f };
 
-		//	block_data data = *World::GetBlock(result.GlobalBlockPosition);
+		
 			
 			
 			DrawCubeWires(centre, 1.01f, 1.01f, 1.01f, BLACK);
 		}
 
-		//Vector3 centre = { result.GlobalBlockPosition.x + 0.5f,
-		//					   result.GlobalBlockPosition.y + 0.5f,
-		//					   result.GlobalBlockPosition.z + 0.5f };
+		if (result.GlobalBlockPosition.x < 6 || result.GlobalBlockPosition.y < 6 || result.GlobalBlockPosition.z < 6) {
+			data = World::GetBlock(result.GlobalBlockPosition);
+		}
 
-		//block_data data = *World::GetBlock(result.GlobalBlockPosition);
-		//DrawText(TextFormat("%i", data.type), 10, 70, 30, GREEN); //Trying to figure a way to show currently looked block.
+		 
+		
+		std::string type;
 
+	
+
+		if (data->type != NULL) {
+			switch (data->type) {
+				case 0: { type = "AIR"; break; }
+				case 1: { type = "GRASS BLOCK"; break; }
+				case 2: { type = "DIRT BLOCK"; break; }
+				case 3: { type = "STONE BLOCK"; break; }
+				case 4: { type = "WOOD LOG"; break; }
+				case 5: { type = "TREE LEAVES"; break; }
+				case 6: { type = "PINE LOG"; break; }
+				case 7: { type = "PINE LEAVES"; break; }
+				case 8: { type = "BUSH LEAVES"; break; }
+				case 9: { type = "SHORT GRASS"; break; }
+				case 10: { type = "RED FLOWER"; break; }
+				case 11: { type = "OXEYE DAISY FLOWER"; break; }
+				case 12: { type = "SAND BLOCK"; break; }
+				case 13: { type = "WATER BLOCK"; break; }
+				case 14: { type = "LAVA BLOCK"; break; }
+				case 15: { type = "COBBLESTONE BLOCK"; break; }
+				case 16: { type = "CLAY BLOCK"; break; }
+				case 17: { type = "BRICKS BLOCK"; break; }
+				case 18: { type = "GRAVEL BLOCK"; break; }
+				case 19: { type = "SNOW BLOCK"; break; }
+				case 20: { type = "BEDROCK BLOCK"; break; }
+				case 21: { type = "TREE"; break; }
+				case 22: { type = "COAL ORE"; break; }
+				case 23: { type = "IRON ORE"; break; }
+				case 24: { type = "DRY FARLAND BLOCK"; break; }
+				case 25: { type = "MOIST FARLAND BLOCK"; break; }
+				case 26: { type = "PINE TREE"; break; }
+				case 27: { type = "WOOD PLANKS"; break; }
+				case 28: { type = "PINE WOOD PLANKS"; break; }
+				case 29: { type = "MOSSY COBBLESTONE BLOCK"; break; }
+				case 30: { type = "GOLD ORE"; break; }
+				case 31: { type = "DIAMOND ORE"; break; }
+				case 32: { type = "TITANIUM ORE"; break; }
+				default: { type = "NULL"; break; }
+			}
+		}
+		else {
+			type = "UNDEFINED BLOCK";
+		}
+
+		
+	
+		std::string blockTxt = "Looking at Block: " + type;
+	
+	
 		// axis gizmo, always on top
 		rlDisableDepthTest();
 
@@ -132,6 +193,35 @@ int main()
 
 		// Update camera rotation and player movement,
 		// only if cursor disabled (hidden)
+
+		if (Player::getHealth() <= 0) {
+			invul = -16; //attempted fix at invulnerabillity not working after dying, but this fix doesn't work D: -Alex
+			character.position = Vector3(0, 160, 0);
+			Player::setHealth(20);
+		
+		}
+
+
+		//Screenshot code
+		std::string fr = TextFormat("__%i", screenShotCount++);
+		std::string ssCount = "screenshot" + fr + ".png";
+
+		if (IsKeyPressed(KEY_F8)) {
+			TakeScreenshot(ssCount.c_str());
+		}
+
+	
+		//void damage
+		if (character.position.y <= -60) {
+			invul += 2;
+			if (invul >= 4) {
+				Player::setHealth(Player::getHealth() - 1);
+				invul = 0;
+			}
+	
+		}
+		
+
 		if (!cursor_enabled)
 		{
 			player_camera.Update();
@@ -163,7 +253,9 @@ int main()
 		}
 		
 		DrawFPS(20, 60);
-
+	
+		DrawText(blockTxt.c_str(), 2, 160, 35, DARKGREEN);
+	
 		Player::DrawUI();
 
 		// S_x = -cos(sundir)

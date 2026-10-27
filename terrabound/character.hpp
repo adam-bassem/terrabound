@@ -24,7 +24,8 @@ public:
 
 	// called per frame
 	void Update();
-
+	// player position
+	Vector3 position;
 private:
 	// reference to player camera
 	PlayerCamera& camera;
@@ -32,6 +33,5 @@ private:
 	bool sprint = false;
 	// player velocity
 	Vector3 velocity;
-	// player position
-	Vector3 position;
+
 };

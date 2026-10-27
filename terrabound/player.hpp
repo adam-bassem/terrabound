@@ -21,4 +21,8 @@ namespace Player
 	void DrawUI();
 	void drawInventory();
 	void Update(PlayerCamera& camera);
+
+	int getHealth();
+
+	void setHealth(int amount);
 }
