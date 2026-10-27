@@ -28,8 +28,9 @@ namespace
 	Texture2D itemSelectionBar;
 	Texture2D itemSelectionHighlighter;
 	Texture2D playerInventory;
+	Texture2D playerCreativeInventory; //test
 
-	//Texture2D block3d;
+	Texture2D block2d;
 
 	bool isCreative = true;
 
@@ -41,12 +42,12 @@ namespace
 	int health = max_health;
 	block_data currentBlock;
 
-	//Texture2D Load3dBlock() {
-//	Image img = LoadImage("tiles_atlas.png");
-//	Texture2D tex = LoadTextureFromImage(img);
-//	UnloadImage(img);
-//	return tex;
-//}
+Texture2D Load2dBlock() {
+	Image img = LoadImage("res/tiles_atlas.png");
+	Texture2D tex = LoadTextureFromImage(img);
+	UnloadImage(img);
+	return tex;
+}
 
 	Texture2D LoadHeart(int id)
 	{
@@ -75,6 +76,15 @@ namespace
 		return tex;
 	}
 
+	Texture2D LoadCreativeInventory(std::string resName) { //std::string resName Idk how to do it your way so i'm doing it my way (If you want to fix this then you can do so freely). -Alex
+		//	Image img = LoadImage(resName.c_str());
+		//Resource r = Resources::LoadTextureFromResource(id);
+		Image img = LoadImage(resName.c_str());// LoadImageFromMemory(".png", (const unsigned char*)r.Data, r.Size);
+		Texture2D tex = LoadTextureFromImage(img);
+		UnloadImage(img);
+		return tex;
+	}
+
 
 	Texture2D LoadQuickItemSelectionHighlighter(int id) { //std::string resName
 	//	Image img = LoadImage(resName.c_str());
@@ -90,7 +100,7 @@ namespace
 		DrawTextureEx(tex, Vector2{ (float)x, (float)y }, 0, 2, WHITE);
 	}
 }
-
+static Mesh itemMesh;
 void DrawHearts()
 {
 	// health is in half-hearts (20 means 10 hearts)
@@ -142,11 +152,75 @@ void drawQuickItemSelectionBars() {
 	//Currently, Just draw the bar. -Alex
 	DrawTextureEx(itemSelectionBar, Vector2{ (float)x, (float)y }, 0, 4, WHITE);
 
-
+	DrawMesh(itemMesh, Material(), Matrix());
 
 
 	DrawTextureEx(itemSelectionHighlighter, Vector2{ (float)sx * (i), (float)sy }, 0, 4, WHITE);
 
+}
+
+void Player::createItemMesh() {
+	std::vector<float> vertices;
+	std::vector<float> texCoords;
+	std::vector<int> indices;
+	//botttom left
+	vertices.push_back(-0.5f);
+	vertices.push_back(-0.5f);
+	vertices.push_back(0.0f);
+	//bottom right
+	vertices.push_back(0.5f);
+	vertices.push_back(-0.5f);
+	vertices.push_back(0.0f);
+
+	//upper right
+	vertices.push_back(0.5f);
+	vertices.push_back(0.5f);
+	vertices.push_back(0.0f);
+
+	//upper left
+	vertices.push_back(-0.5f);
+	vertices.push_back(0.5f);
+	vertices.push_back(0.0f);
+		
+	indices.push_back(0);
+	indices.push_back(1);
+	indices.push_back(2);
+	indices.push_back(2);
+	indices.push_back(3);
+	indices.push_back(0);
+
+	texCoords.push_back(0);
+	texCoords.push_back(0);
+
+	texCoords.push_back(1);
+	texCoords.push_back(0);
+
+	texCoords.push_back(1);
+	texCoords.push_back(1);
+
+	texCoords.push_back(0);
+	texCoords.push_back(1);
+
+	itemMesh = Mesh{};
+	itemMesh.vertexCount = (int)indices.size();
+	itemMesh.triangleCount = (int)indices.size() / 3;
+	itemMesh.vertices = (float*)MemAlloc(indices.size() * 3 * sizeof(float));
+	itemMesh.texcoords = (float*)MemAlloc(indices.size() * 2 * sizeof(float));
+	itemMesh.indices = nullptr;
+
+	for (size_t i = 0; i < indices.size(); i++)
+	{
+		const unsigned int k = indices[i];
+		for (int c = 0; c < 3; c++)
+		{
+			itemMesh.vertices[i * 3 + c] = vertices[k * 3 + c];
+		}
+		for (int c = 0; c < 2; c++)
+		{
+			itemMesh.texcoords[i * 2 + c] = texCoords[k * 2 + c];
+		}
+	}
+	UploadMesh(&itemMesh, false);
 }
 
 void Player::drawInventory() { //Draw inventory -Alex
@@ -158,30 +232,64 @@ void Player::drawInventory() { //Draw inventory -Alex
 
 	//World::GetBlock(Vector3(0, 90, 0));
 
-	DrawTextureEx(playerInventory, Vector2{ (float)x, (float)y - 27 }, 0, 3, WHITE);
-	DrawText("Inventory", x + 105, y + 35, 30, DARKGRAY);
-	DrawText("Inventory", x + 107, y + 37, 30, WHITE);
+	if (!isCreative) {
+		DrawTextureEx(playerInventory, Vector2{ (float)x, (float)y - 27 }, 0, 3, WHITE);
+		DrawText("Inventory", x + 105, y + 35, 30, DARKGRAY);
+		DrawText("Inventory", x + 107, y + 37, 30, WHITE);
 
-	DrawText("Armor", x + 475, y + 35, 25, DARKGRAY);
-	DrawText("Armor", x + 477, y + 37, 25, WHITE);
+		DrawText("Armor", x + 475, y + 35, 25, DARKGRAY);
+		DrawText("Armor", x + 477, y + 37, 25, WHITE);
 
-	DrawText("Helmet", x + armorTextX, y + armorTextY, 25, DARKGRAY);
-	DrawText("Helmet", x + armorTextX + 2, y + armorTextY + 2, 25, WHITE);
+		DrawText("Helmet", x + armorTextX, y + armorTextY, 25, DARKGRAY);
+		DrawText("Helmet", x + armorTextX + 2, y + armorTextY + 2, 25, WHITE);
 
-	DrawText("Chestplate", x + (armorTextX - 10), y + (armorTextY + 50), 25, DARKGRAY);
-	DrawText("Chestplate", x + (armorTextX - 10) + 2, y + (armorTextY + 50) + 2, 25, WHITE);
+		DrawText("Chestplate", x + (armorTextX - 10), y + (armorTextY + 50), 25, DARKGRAY);
+		DrawText("Chestplate", x + (armorTextX - 10) + 2, y + (armorTextY + 50) + 2, 25, WHITE);
 
-	DrawText("Leggings", x + armorTextX, y + (armorTextY + 105), 25, DARKGRAY);
-	DrawText("Leggings", x + armorTextX + 2, y + (armorTextY + 105) + 2, 25, WHITE);
+		DrawText("Leggings", x + armorTextX, y + (armorTextY + 105), 25, DARKGRAY);
+		DrawText("Leggings", x + armorTextX + 2, y + (armorTextY + 105) + 2, 25, WHITE);
 
-	DrawText("Greaves", x + armorTextX, y + (armorTextY + 165), 25, DARKGRAY);
-	DrawText("Greaves", x + armorTextX + 2, y + (armorTextY + 165) + 2, 25, WHITE);
+		DrawText("Greaves", x + armorTextX, y + (armorTextY + 165), 25, DARKGRAY);
+		DrawText("Greaves", x + armorTextX + 2, y + (armorTextY + 165) + 2, 25, WHITE);
 
-	DrawText("Shield", x + (armorTextX - 410), y + (armorTextY + 165), 25, DARKGRAY);
-	DrawText("Shield", x + (armorTextX - 410) + 2, y + (armorTextY + 165) + 2, 25, WHITE);
+		DrawText("Shield", x + (armorTextX - 410), y + (armorTextY + 165), 25, DARKGRAY);
+		DrawText("Shield", x + (armorTextX - 410) + 2, y + (armorTextY + 165) + 2, 25, WHITE);
 
-	DrawText("Quiver", x + (armorTextX - 410), y + (armorTextY + 105), 25, DARKGRAY);
-	DrawText("Quiver", x + (armorTextX - 410) + 2, y + (armorTextY + 105) + 2, 25, WHITE);
+		DrawText("Quiver", x + (armorTextX - 410), y + (armorTextY + 105), 25, DARKGRAY);
+		DrawText("Quiver", x + (armorTextX - 410) + 2, y + (armorTextY + 105) + 2, 25, WHITE); 
+	}
+	else {
+		DrawTextureEx(playerCreativeInventory, Vector2{ (float)x, (float)y - 27 }, 0, 3, WHITE);
+		DrawText("Select Block", x + 105, y + 15, 30, DARKGRAY);
+		DrawText("Select Block", x + 107, y + 17, 30, WHITE);
+		
+
+		
+
+	//	block2d.width = 16;
+	//	block2d.height = 16;
+		
+		//Basic way of drawing textures but no functionallity besides textures 
+		for (int i = 0; i < 10; i++) {
+			for (int l = 0; l < 2; l++) {
+				int j = i + 1;
+				DrawTexturePro(block2d, Rectangle(16 * j, 16 * l, 16, 16), Rectangle(128 + (i * 61), 54 + (l * 71), 48, 48), Vector2(0, 0), 5, WHITE);
+			}
+		}
+
+	
+		//DrawTextureRec(block2d, Rectangle(32, 0, 16, 16), Vector2(128, 54), WHITE);
+		
+		
+		//DrawRectangle(128, 54, 48, 48, WHITE)
+		
+
+		//DrawCube(Vector3(20, 20, -1), 16, 16, 16, RED);
+		
+		//DrawCircle(20, 20, 20, RED);
+		//DrawCube()
+	}
+
 }
 
 
@@ -195,9 +303,39 @@ void Player::Initialise()
 	itemSelectionHighlighter = LoadQuickItemSelectionHighlighter(IDB_PNG7); //"res/gui/selection_highlighter.png"
 
 	playerInventory = LoadInventory(IDB_PNG8); //"res/gui/player_inventory.png"
+	playerCreativeInventory = LoadCreativeInventory("res/gui/player_creative_inventory.png"); //"res/gui/player_inventory.png"
 
+	block2d = Load2dBlock();
+	createItemMesh();
 	lastRecordedTime = GetTime();
 }
+
+//bool Player::intersects(Vector3 a, Vector3 b) {
+//	float aMinX = a.x;
+//	float aMinY = a.y;
+//	float aMinZ = a.z;
+//
+//	float aMaxX = a.x + 16; //Some hard coded values
+//	float aMaxY = a.y + 16;
+//	float aMaxZ = a.z + 16;
+//
+//	float bMinX = b.x;
+//	float bMinY = b.y;
+//	float bMinZ = b.z;
+//				  
+//	float bMaxX = b.x + 16; //Some hard coded values
+//	float bMaxY = b.y + 16;
+//	float bMaxZ = b.z + 16;
+//
+//
+//	return 
+//		aMinX <= bMaxX &&
+//		aMaxX >= bMinX &&
+//		aMinY <= bMaxY &&
+//		aMaxY >= bMinY &&
+//		aMinZ <= bMaxZ &&
+//		aMaxZ >= bMinZ;
+//}
 
 void Player::Shutdown()
 {
@@ -206,6 +344,9 @@ void Player::Shutdown()
 	UnloadTexture(full_heart);	
 	UnloadTexture(itemSelectionBar);
 	UnloadTexture(itemSelectionHighlighter);
+	UnloadTexture(playerInventory);
+	UnloadTexture(playerCreativeInventory);
+	UnloadTexture(block2d);
 }
 
 void Player::DrawUI()

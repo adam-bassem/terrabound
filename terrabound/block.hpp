@@ -101,6 +101,7 @@ namespace Block
 	float GetHardness(block_data& data);
 	block_mesh GetBlockMesh(block_data& data);
 	static block_mesh CubeBlock();
+	static block_mesh halfCubeBlock();
 	static block_mesh PlantBlock();
 	static block_mesh flowerBlock();
 	block_data GetBlock(block_type type);

@@ -16,13 +16,26 @@
 
 namespace Player
 {
+	
+
+	
+
+
 	void Initialise();
+
 	void Shutdown();
+
 	void DrawUI();
+
 	void drawInventory();
+	
+	void createItemMesh();
+
 	void Update(PlayerCamera& camera);
 
 	int getHealth();
+
+	//bool intersects(Vector3 a, Vector3 b);
 
 	void setHealth(int amount);
 }

@@ -22,7 +22,7 @@
 #include "ddaraycast.hpp"
 #include "player.hpp"
 #include "rlgl.h"
-
+#include "AABB.h"
 namespace
 {
 	// Player camera, handles camera rotation, and player
@@ -89,6 +89,14 @@ int main()
 	int invul = 0;
 	int screenShotCount = 0;
 	block_data* data = NULL;
+
+
+
+	//AABB playerBB = AABB(0, 0, 0, 16, 32, 16);
+	//AABB worldBB = AABB(0, 0, 0, 16, 32, 16);
+
+
+
 	while (!WindowShouldClose())
 	{
 		BeginDrawing();
@@ -128,11 +136,9 @@ int main()
 		 
 		
 		std::string type;
-
-	
-
-		if (data->type != NULL) {
-			switch (data->type) {
+		try {
+			if (data->type != NULL) {
+				switch (data->type) {
 				case 0: { type = "AIR"; break; }
 				case 1: { type = "GRASS BLOCK"; break; }
 				case 2: { type = "DIRT BLOCK"; break; }
@@ -167,30 +173,52 @@ int main()
 				case 31: { type = "DIAMOND ORE"; break; }
 				case 32: { type = "TITANIUM ORE"; break; }
 				default: { type = "NULL"; break; }
+				}
+			}
+			else {
+				type = "UNDEFINED BLOCK";
 			}
 		}
-		else {
-			type = "UNDEFINED BLOCK";
+		catch (std::exception e) {
+			continue;
 		}
+		
 
 		
 	
-		std::string blockTxt = "Looking at Block: " + type;
+
+
+		std::string blockTxt = "Looking at Block: " + type ;
 	
 	
 		// axis gizmo, always on top
 		rlDisableDepthTest();
 
-		const Vector3 gizmo_origin = Vector3Add(player_camera.GetPosition(), player_camera.Forward());
-		DrawLine3D(gizmo_origin, Vector3Add(gizmo_origin, Vector3 { 0.15f, 0.0f, 0.0f }), RED);
-		DrawLine3D(gizmo_origin, Vector3Add(gizmo_origin, Vector3 { 0.0f, 0.15f, 0.0f }), GREEN);
-		DrawLine3D(gizmo_origin, Vector3Add(gizmo_origin, Vector3 { 0.0f, 0.0f, 0.15f }), BLUE);
 
+	//	if (IsKeyDown(KEY_F3)) {
+			const Vector3 gizmo_origin = Vector3Add(player_camera.GetPosition(), player_camera.Forward());
+			DrawLine3D(gizmo_origin, Vector3Add(gizmo_origin, Vector3{ 0.15f, 0.0f, 0.0f }), RED);
+			DrawLine3D(gizmo_origin, Vector3Add(gizmo_origin, Vector3{ 0.0f, 0.15f, 0.0f }), GREEN);
+			DrawLine3D(gizmo_origin, Vector3Add(gizmo_origin, Vector3{ 0.0f, 0.0f, 0.15f }), BLUE);
+
+	//	}
+		//Camera2D cae = Camera2D(Vector2(player_camera.GetPosition().x, player_camera.GetPosition().y), )
+		//BeginMode2D();
+
+		//EndMode2D();
+		//else {
+		//	DrawLine3D(gizmo_origin, Vector3())
+		//	DrawLine(-0.5f, 0.0f, 0.5f, 0.0f, WHITE);
+		//	DrawLine(0.0f, 0.5f, 0.0f, -0.5f, WHITE);
+		//}
+		
 		rlDrawRenderBatchActive();
+		
+		
 		rlEnableDepthTest();
 
 		EndMode3D();
-
+		DrawText(blockTxt.c_str(), 2, 160, 35, DARKGREEN);
 		// Update camera rotation and player movement,
 		// only if cursor disabled (hidden)
 
@@ -227,6 +255,7 @@ int main()
 			player_camera.Update();
 			character.Update();
 		}
+
 		Player::Update(player_camera);
 
 		// If escape is pressed, toggle cursor on/off
@@ -254,7 +283,7 @@ int main()
 		
 		DrawFPS(20, 60);
 	
-		DrawText(blockTxt.c_str(), 2, 160, 35, DARKGREEN);
+	
 	
 		Player::DrawUI();
 

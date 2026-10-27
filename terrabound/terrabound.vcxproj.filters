@@ -48,6 +48,9 @@
     <ClCompile Include="WorldDecorations.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AABB.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="playercamera.hpp">
@@ -95,6 +98,9 @@
     <ClInclude Include="WorldDecorations.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="AABB.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="terrabound.rc">
@@ -112,6 +118,33 @@
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="heart_half.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\gui\IDB_PNG10.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\gui\heart_empty.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\gui\heart_full.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\gui\heart_half.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\atlas.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\gui\quick_item_bar.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\gui\selection_highlighter.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\gui\player_inventory.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="res\tiles_atlas.png">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

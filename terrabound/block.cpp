@@ -187,6 +187,76 @@ static block_mesh Block::CubeBlock()
 	return mesh;
 }
 
+static block_mesh Block::halfCubeBlock()
+{
+	block_mesh mesh;
+
+	// for each face there are 4 corners in push order, face normal,
+	// indcies, and the cull bit that hides it
+
+	constexpr float corners[6][4][3] =
+	{
+		{ { 0,0,1 }, { 1,0,1 }, { 1,1,1 }, { 0,0.5f,1 } }, // north
+
+		{ { 0,0.5f,0 }, { 1,0.0f,0 }, { 1,0.5f ,0 }, { 0,0.0f,0 } }, // south
+
+
+		{ { 1, 0.0f,0 }, { 1, 0.5f,1 }, { 1, 0.5f ,1 }, { 1, 0.0f,0 } }, // east
+
+		{ { 0,0,0 }, { 0,0,1 }, { 0,0.5f,1 }, { 0,0.5f,0 } }, // west
+
+
+
+
+		{ { 0,1,0 }, { 0,1.0f, 1 }, { 1, 1.0f,1 }, { 1, 1.0f,0 } }, // up //Change the y to 0.9 for farland like blocks
+	
+		{ { 0,0,0 }, { 1,0,0 }, { 1,0,1 }, { 0,0,1 } }, // down
+	};
+
+	constexpr float normals[6][3] =
+	{
+		{ 0, 0, 1 }, { 0, 0, -1 }, { 1, 0, 0 }, { -1, 0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }
+	};
+
+	constexpr uint8_t cull_bits[6] =
+	{
+		CULL_NORTH, CULL_SOUTH, CULL_EAST, CULL_WEST, CULL_UP, CULL_DOWN
+	};
+
+	constexpr unsigned int order[6][6] =
+	{
+		{ 0,1,2, 2,3,0 }, // north
+		{ 0,3,2, 2,1,0 }, // south
+		{ 0,3,2, 2,1,0 }, // east
+		{ 0,1,2, 2,3,0 }, // west
+		{ 0,1,2, 2,3,0 }, // up
+		{ 0,1,2, 2,3,0 }, // down
+	};
+
+	for (int f = 0; f < 6; f++)
+	{
+		const unsigned int base = mesh.vertices.size() / 3;
+
+		for (int v = 0; v < 4; v++)
+		{
+			for (int c = 0; c < 3; c++)
+			{
+				mesh.vertices.push_back(corners[f][v][c]);
+				mesh.normals.push_back(normals[f][c]);
+			}
+		}
+
+		for (int i = 0; i < 6; i++)
+		{
+			mesh.indices.push_back(base + order[f][i]);
+		}
+
+		mesh.cull.push_back(cull_bits[f]);
+	}
+
+	return mesh;
+}
+
 block_mesh Block::PlantBlock()
 {
 	block_mesh mesh;
@@ -309,6 +379,7 @@ block_mesh Block::GetBlockMesh(block_data& data)
 	static const block_mesh cube = CubeBlock();
 	static const block_mesh plant = PlantBlock();
 	static const block_mesh flower = flowerBlock();
+	//static const block_mesh slab = halfCubeBlock();
 
 	block_mesh mesh;
 
@@ -345,6 +416,9 @@ block_mesh Block::GetBlockMesh(block_data& data)
 		}
 
 		case BLOCK_BEDROCK: { mesh = cube; break; }
+
+	//	case BLOCK_GRASS: { mesh = slab; break; }
+
 
 		default:
 		{
