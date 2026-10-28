@@ -92,6 +92,7 @@ int main()
 
 
 
+
 	//AABB playerBB = AABB(0, 0, 0, 16, 32, 16);
 	//AABB worldBB = AABB(0, 0, 0, 16, 32, 16);
 
@@ -99,6 +100,7 @@ int main()
 
 	while (!WindowShouldClose())
 	{
+		bool isDebug = Player::isDebug();
 		BeginDrawing();
 
 		RaycastResult result = DDARaycast::DoRaycast(player_camera.GetPosition(), player_camera.Forward());
@@ -183,16 +185,17 @@ int main()
 			continue;
 		}
 		
-
-		
-	
-
 		const char* consBlockPos = TextFormat("%f, %f, %f", result.GlobalBlockPosition.x, result.GlobalBlockPosition.y, result.GlobalBlockPosition.z);
 
 		std::string blockPos = consBlockPos;
 
 		std::string posBlockTxt = " : \n[BX/BY/BZ]" + blockPos;
 		std::string blockTxt = "Looking at Block: " + type + posBlockTxt;
+		
+
+	
+
+
 	
 	
 		// axis gizmo, always on top
@@ -204,17 +207,6 @@ int main()
 			DrawLine3D(gizmo_origin, Vector3Add(gizmo_origin, Vector3{ 0.15f, 0.0f, 0.0f }), RED);
 			DrawLine3D(gizmo_origin, Vector3Add(gizmo_origin, Vector3{ 0.0f, 0.15f, 0.0f }), GREEN);
 			DrawLine3D(gizmo_origin, Vector3Add(gizmo_origin, Vector3{ 0.0f, 0.0f, 0.15f }), BLUE);
-
-	//	}
-		//Camera2D cae = Camera2D(Vector2(player_camera.GetPosition().x, player_camera.GetPosition().y), )
-		//BeginMode2D();
-
-		//EndMode2D();
-		//else {
-		//	DrawLine3D(gizmo_origin, Vector3())
-		//	DrawLine(-0.5f, 0.0f, 0.5f, 0.0f, WHITE);
-		//	DrawLine(0.0f, 0.5f, 0.0f, -0.5f, WHITE);
-		//}
 		
 		rlDrawRenderBatchActive();
 		
@@ -222,7 +214,10 @@ int main()
 		rlEnableDepthTest();
 
 		EndMode3D();
-		DrawText(blockTxt.c_str(), 2, 160, 35, DARKGREEN);
+		if (isDebug) {
+			DrawText(blockTxt.c_str(), 12, 162, 30, DARKGREEN);
+			DrawText(blockTxt.c_str(), 10, 160, 30, GREEN);
+		}
 		// Update camera rotation and player movement,
 		// only if cursor disabled (hidden)
 
@@ -242,8 +237,8 @@ int main()
 			TakeScreenshot(ssCount.c_str());
 		}
 
-		DrawText(TextFormat("World Seed: %i", World::getSeed()), 10, 260, 35, PURPLE);
-
+	
+	
 	
 		//void damage
 		if (character.position.y <= -60) {
@@ -287,7 +282,6 @@ int main()
 			toggleCursor();
 		}
 		
-		DrawFPS(20, 60);
 	
 	
 	

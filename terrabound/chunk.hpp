@@ -49,7 +49,7 @@ public:
 	float GetAO(int x, int y, int z, const int n[3], const int u[3], const int v[3], int su, int sv);
 
 	bool decorated = false;
-
+	void MarkDirtyAt(int x, int y, int z);
 private:
 	uint64_t seed;
 	Vector3 Position;
@@ -60,7 +60,7 @@ private:
 
 	int heightmap[subchunk_size][subchunk_size];
 
-	void MarkDirtyAt(int x, int y, int z);
+	
 	void DecorateTree(Vector3 base, std::mt19937_64& rng);
 	void DecoratePineTree(Vector3 base, std::mt19937_64& rng);
 	void DecorateBush(Vector3 base);

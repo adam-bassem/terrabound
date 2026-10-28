@@ -16,6 +16,9 @@
 
 namespace Player
 {
+
+	bool isDebug();
+
 	void Initialise();
 
 	void Shutdown();

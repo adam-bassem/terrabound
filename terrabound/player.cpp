@@ -30,7 +30,7 @@ namespace
 	Texture2D playerInventory;
 	Texture2D playerCreativeInventory; //test
 	Texture2D compasses; //test
-
+	bool debug;
 	Texture2D block2d;
 
 	bool isCreative = true;
@@ -158,20 +158,7 @@ void drawCompass(PlayerCamera &camera) {
 	const int x = GetScreenWidth() - 120;
 	const int y = 30;
 
-
-
-	//const char* compass = "N";
-	//if (angle >= 315.0f || angle < 45.0f) compass = "N";
-
-	//else if (angle < 135.0f) compass = "W";
-
-	//else if (angle < 225.0f) compass = "S";
-
-	//else compass = "E";
-
-
-
-	std::cout << angle << "\n";
+	//std::cout << angle << "\n";
 
 	//North
 	if (angle < 15 || angle < -15) {
@@ -529,6 +516,10 @@ void Player::DrawUI()
 //	draw3dBlock();
 }
 
+bool Player::isDebug() {
+	return debug;
+}
+static Color fpsColor;
 void Player::Update(PlayerCamera& camera)
 {
 	double currentTime = GetTime();
@@ -647,11 +638,49 @@ void Player::Update(PlayerCamera& camera)
 
 
 
-	DrawText(TextFormat("XYZ: %.2f / %.2f / %.2f", pos.x, pos.y, pos.z), 20, 20, 20, WHITE);
-	DrawText(TextFormat("Facing: %s (%.1f deg)", compass, angle), 20, 40, 20, WHITE);
+	if (debug) {
 
-	DrawText(TextFormat("Current Block is [%s]", curBlockName), 10, 70, 30, RED);
-	DrawText(TextFormat("Current Gamemode is [%s]", gamemode), 10, 110, 30, BLUE);
+		int fps = GetFPS();
+		//if (fps >= 60) {
+		//	fpsColor = DARKGREEN;
+		//}
+		//else if (fps >= 25 && fps < 60) {
+		//	fpsColor = ORANGE;
+		//}
+		//else {
+		//	fpsColor = RED;
+		//}
+		DrawText(TextFormat("FPS: %i", fps), 12, 10, 30, DARKGREEN);
+		DrawText(TextFormat("FPS: %i", fps), 10, 12, 30, GREEN);
+	
+		DrawText(TextFormat("XYZ: %.2f / %.2f / %.2f", pos.x, pos.y, pos.z), GetScreenWidth() - 448, 218, 30, GRAY);
+		DrawText(TextFormat("XYZ: %.2f / %.2f / %.2f", pos.x, pos.y, pos.z), GetScreenWidth() - 450, 220, 30, WHITE);
+
+		DrawText(TextFormat("Facing: %s (%.1f deg)", compass, angle), GetScreenWidth() - 342, 142, 30, GRAY);
+		DrawText(TextFormat("Facing: %s (%.1f deg)", compass, angle), GetScreenWidth() - 340, 140, 30, WHITE);
+
+		DrawText(TextFormat("Current Block is [%s]", curBlockName), 12, 72, 30, DARKBROWN);
+		DrawText(TextFormat("Current Block is [%s]", curBlockName), 10, 70, 30, RED);
+
+
+		DrawText(TextFormat("Current Gamemode is [%s]", gamemode), 12, 112, 30, DARKBLUE);
+		DrawText(TextFormat("Current Gamemode is [%s]", gamemode), 10, 110, 30, BLUE);
+
+		DrawText(TextFormat("World Seed: %i", World::getSeed()), GetScreenWidth() - 382, 182, 30, DARKPURPLE);
+		DrawText(TextFormat("World Seed: %i", World::getSeed()), GetScreenWidth() - 380, 180, 30, PURPLE);
+	}
+	else {
+		DrawText(TextFormat("FPS: %i", GetFPS()), 12, 10, 30, DARKGREEN);
+		DrawText(TextFormat("FPS: %i", GetFPS()), 10, 12, 30, GREEN);
+	}
+
+
+
+	if (IsKeyPressed(KEY_F3)) {
+		debug = !debug;
+	}
+
+
 
 	// Break
 	if (in_reach)
@@ -674,15 +703,13 @@ void Player::Update(PlayerCamera& camera)
 	
 
 	// Place
-	if (in_reach && rmbDuration >= t)
-	{
+	if (in_reach && rmbDuration >= t) {
 		World::PlaceBlock(raycast.FirstVector3AlongNormal, currentBlock);
 		rmbDuration = 0.0;
 	}
 
 	// FOR TESTING ONLY
-	if (IsKeyPressed(KEY_E))
-	{
+	if (IsKeyPressed(KEY_E)) {
 		hasDied = false;
 		health = std::max(0, health - 1);
 	}

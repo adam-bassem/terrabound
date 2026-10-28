@@ -433,56 +433,8 @@ void Chunk::DecoratePineTree(Vector3 base, std::mt19937_64& rng) {
 
 
 	// Trunk / Branches last, so that the leaves don't cover it
-	for (int dy = 0; dy < h; dy++)
-	{
+	for (int dy = 0; dy < h; dy++) {
 		set(bx, by + dy, bz, BLOCK_PINE_LOG);
-
-
-	//	set(bx + 1, by + dy, bz, BLOCK_PINE_LOG);
-	//	set(bx + 1, by + dy, bz + 1, BLOCK_PINE_LOG);
-		//set(bx, by + dy, bz + 1, BLOCK_PINE_LOG);
-	
-		
-		 //North - South
-		//for (int i = 0; i < br; i++) {
-		//	set(bx, h - 5, bz + i, BLOCK_PINE_LOG);
-		//
-		//}
-		//for (int i = 0; i < br; i++) {
-		//	set(bx, h - 4, (bz + br) + i, BLOCK_PINE_LOG);
-		//}
-
-		//for (int i = 0; i > -br; i--) {
-		//	set(bx, brh, bz + i, BLOCK_PINE_LOG);
-
-		//}
-		//for (int i = 0; i > -br; i--) {
-		//	set(bx, brh, (bz - br) + i, BLOCK_PINE_LOG);
-		//}
-
-
-
-		////West - East
-
-		//for (int i = 0; i < br; i++) {
-		//	set(bx + i, h - 5, bz , BLOCK_PINE_LOG);
-
-		//}
-		//for (int i = 0; i < br; i++) {
-		//	set((bx + br) + i, h - 4, bz , BLOCK_PINE_LOG);
-		//}
-
-		//for (int i = 0; i > nbr; i--) {
-		//	set(bx + i, nbr, bz , BLOCK_PINE_LOG);
-
-		//}
-
-		//for (int i = 0; i > nbr; i--) {
-		//	set((bx - nbr) + i, nbr, bz , BLOCK_PINE_LOG);
-		//}
-
-	
-
 	}
 }
 
@@ -527,10 +479,8 @@ void Chunk::DecorateSecondPass()
 	const float r2 = roll2(rng);
 
 
-	for (int x = 0; x < subchunk_size; x++)
-	{
-		for (int z = 0; z < subchunk_size; z++)
-		{
+	for (int x = 0; x < subchunk_size; x++) {
+		for (int z = 0; z < subchunk_size; z++)	{
 			const float r = roll(rng);
 			const float r3 = roll3(rng);
 
@@ -587,10 +537,8 @@ Chunk::~Chunk()
 #define CULL_UP 0b00010000
 #define CULL_DOWN 0b00100000
 
-void Chunk::GenerateMesh()
-{
-	for (int subchunk_i = 0; subchunk_i < chunk_height_subchunks; subchunk_i++)
-	{
+void Chunk::GenerateMesh() {
+	for (int subchunk_i = 0; subchunk_i < chunk_height_subchunks; subchunk_i++) {
 		Subchunk& subchunk = subchunks[subchunk_i];
 
 		if (!subchunk.is_dirty) continue;
@@ -605,12 +553,9 @@ void Chunk::GenerateMesh()
 		std::vector<unsigned char> colours;
 		std::vector<unsigned int> indices;
 
-		for (int x = 0; x < subchunk_size; x++)
-		{
-			for (int y = 0; y < subchunk_size; y++)
-			{
-				for (int z = 0; z < subchunk_size; z++)
-				{
+		for (int x = 0; x < subchunk_size; x++) {
+			for (int y = 0; y < subchunk_size; y++) {
+				for (int z = 0; z < subchunk_size; z++) {
 					block_data& this_block = subchunk.blocks[x][y][z];
 
 
@@ -629,34 +574,28 @@ void Chunk::GenerateMesh()
 
 					const block_mesh& mesh = Block::GetBlockMesh(this_block);
 
-					for (size_t q = 0; q < mesh.cull.size(); q++)
-					{
+					for (size_t q = 0; q < mesh.cull.size(); q++) {
 						if (cull & mesh.cull[q]) continue;
 
 						const float* nrm = &mesh.normals[q * 12];
 						const int n[3] = { (int)nrm[0], (int)nrm[1], (int)nrm[2] };
 
 						int u[3], v[3];
-						if (n[0] != 0)
-						{
+						if (n[0] != 0) {
 							u[0] = 0; u[1] = 1; u[2] = 0;
 							v[0] = 0; v[1] = 0; v[2] = 1;
 						}
-						else if (n[1] != 0)
-						{
+						else if (n[1] != 0) {
 							u[0] = 1; u[1] = 0; u[2] = 0;
 							v[0] = 0; v[1] = 0; v[2] = 1;
-						}
-						else
-						{
+						} else {
 							u[0] = 1; u[1] = 0; u[2] = 0;
 							v[0] = 0; v[1] = 1; v[2] = 0;
 						}
 
 						const unsigned int first = (unsigned int)(vertices.size() / 3);
 
-						for (int k = 0; k < 4; k++)
-						{
+						for (int k = 0; k < 4; k++) {
 							const size_t vi = (q * 4 + k) * 3;
 							const float lx = mesh.vertices[vi];
 							const float ly = mesh.vertices[vi + 1];
@@ -686,8 +625,7 @@ void Chunk::GenerateMesh()
 							colours.push_back((unsigned char)(ao * 255.0f));
 						}
 
-						for (int i = 0; i < 6; i++)
-						{
+						for (int i = 0; i < 6; i++) {
 							indices.push_back(first + (mesh.indices[q * 6 + i] - (unsigned int)(q * 4)));
 						}
 					}
@@ -704,20 +642,16 @@ void Chunk::GenerateMesh()
 		mesh.colors = (unsigned char*)MemAlloc(indices.size() * 4 * sizeof(unsigned char));
 		mesh.indices = nullptr;
 
-		for (size_t i = 0; i < indices.size(); i++)
-		{
+		for (size_t i = 0; i < indices.size(); i++){
 			const unsigned int k = indices[i];
-			for (int c = 0; c < 3; c++)
-			{
+			for (int c = 0; c < 3; c++) {
 				mesh.vertices[i * 3 + c] = vertices[k * 3 + c];
 				mesh.normals[i * 3 + c] = normals[k * 3 + c];
 			}
-			for (int c = 0; c < 2; c++)
-			{
+			for (int c = 0; c < 2; c++) {
 				mesh.texcoords[i * 2 + c] = texcoords[k * 2 + c];
 			}
-			for (int c = 0; c < 4; c++)
-			{
+			for (int c = 0; c < 4; c++) {
 				mesh.colors[i * 4 + c] = colours[k * 4 + c];
 			}
 		}
@@ -731,8 +665,7 @@ void Chunk::GenerateMesh()
 
 void Chunk::GenerateModel()
 {
-	for (int i = 0; i < chunk_height_subchunks; i++)
-	{
+	for (int i = 0; i < chunk_height_subchunks; i++) {
 		Subchunk& subchunk = subchunks[i];
 
 		if (subchunk.subchunk_mesh.vertexCount == 0) continue;
@@ -824,8 +757,7 @@ void Chunk::MarkDirtyAt(int x, int y, int z)
 	subchunks[y / subchunk_size].is_dirty = true;
 }
 
-void Chunk::SetNeighbour(int x, int y, Chunk* c)
-{
+void Chunk::SetNeighbour(int x, int y, Chunk* c) {
 	if (x == 0 && y == 1) neighbours[0] = c; // N (+z)
 	else if (x == 0 && y == -1) neighbours[1] = c; // S (-z)
 	else if (x == 1 && y == 0) neighbours[2] = c; // E (+x)
@@ -834,30 +766,25 @@ void Chunk::SetNeighbour(int x, int y, Chunk* c)
 	for (Subchunk& s : subchunks) s.is_dirty = true;
 }
 
-bool Chunk::IsSolidAt(int x, int y, int z, bool transparent_is_solid)
-{
+bool Chunk::IsSolidAt(int x, int y, int z, bool transparent_is_solid) {
 	if (y < 0 || y >= subchunk_size * chunk_height_subchunks) return false;
 
-	if (x < 0)
-	{
+	if (x < 0) {
 		if (!neighbours[3]) return false;
 		return neighbours[3]->IsSolidAt(x + subchunk_size, y, z, transparent_is_solid);
 	}
 
-	if (x >= subchunk_size)
-	{
+	if (x >= subchunk_size)	{
 		if (!neighbours[2]) return false;
 		return neighbours[2]->IsSolidAt(x - subchunk_size, y, z, transparent_is_solid);
 	}
 
-	if (z < 0)
-	{
+	if (z < 0) {
 		if (!neighbours[1]) return false;
 		return neighbours[1]->IsSolidAt(x, y, z + subchunk_size, transparent_is_solid);
 	}
 
-	if (z >= subchunk_size)
-	{
+	if (z >= subchunk_size)	{
 		if (!neighbours[0]) return false;
 		return neighbours[0]->IsSolidAt(x, y, z - subchunk_size, transparent_is_solid);
 	}
@@ -866,8 +793,7 @@ bool Chunk::IsSolidAt(int x, int y, int z, bool transparent_is_solid)
 	return b.type != BLOCK_AIR && (transparent_is_solid || !b.transparent);
 }
 
-float Chunk::GetAO(int x, int y, int z, const int n[3], const int u[3], const int v[3], int su, int sv)
-{
+float Chunk::GetAO(int x, int y, int z, const int n[3], const int u[3], const int v[3], int su, int sv) {
 	const int fx = x + n[0];
 	const int fy = y + n[1];
 	const int fz = z + n[2];

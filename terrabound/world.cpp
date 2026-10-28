@@ -31,8 +31,7 @@ namespace
 	std::vector<std::pair<int, int>> load_order;
 	int load_order_radius = -1;
 
-	void BuildLoadOrder(int r)
-	{
+	void BuildLoadOrder(int r) {
 		load_order.clear();
 		for (int x = -r; x <= r; x++)
 		{
@@ -51,8 +50,7 @@ namespace
 	}
 
 	// Creates the chunk at (x, z) if it doesn't exist yet. Returns true if one was created.
-	bool ProcessChunk(int x, int z)
-	{
+	bool ProcessChunk(int x, int z) {
 		if (chunks.count({ x, z })) return false;
 
 		Vector3 block_origin = { (float)(x * subchunk_size), 0, (float)(z * subchunk_size) };
@@ -62,8 +60,7 @@ namespace
 		constexpr int dx[4] = { 0, 0, 1, -1 };
 		constexpr int dz[4] = { 1, -1, 0, 0 };
 
-		for (int i = 0; i < 4; i++)
-		{
+		for (int i = 0; i < 4; i++) {
 			auto it = chunks.find({ x + dx[i], z + dz[i] });
 			if (it == chunks.end() || !it->second) continue;
 
@@ -177,6 +174,7 @@ block_data* World::GetBlock(Vector3 Global)
 
 	const int lx = wx - cx * subchunk_size;
 	const int lz = wz - cz * subchunk_size;
+
 	return &found->second->GetBlock({ (float)lx, (float)wy, (float)lz });
 }
 
@@ -199,13 +197,14 @@ void World::SetBlock(Vector3 Global, block_data& data)
 	found->second->SetBlock({ (float)lx, (float)wy, (float)lz }, data);
 }
 
-void World::BreakBlock(Vector3 Global)
-{
+void World::BreakBlock(Vector3 Global) {
 	block_data* b = GetBlock(Global);
 	if (!b) return;
 
 	b->type = BLOCK_AIR;
 	b->state = (block_state)0;
+
+	
 
 	const int wx = (int)std::floor(Global.x);
 	const int wy = (int)std::floor(Global.y);
@@ -221,26 +220,36 @@ void World::BreakBlock(Vector3 Global)
 
 	const int lx = wx - cx * subchunk_size;
 	const int lz = wz - cz * subchunk_size;
+
+	//So i not sure if this is the correct fix for the blocks not updating when broken 
+	// but it kinda works so i keeping it here until you fix it. -Alex 
+	for (int dx = -3; dx <= 3; dx++) {
+		for (int dy = -3; dy <= 3; dy++) {
+			for (int dz = -3; dz <= 3; dz++) {
+				found->second->MarkDirtyAt(lx + dx, wy + dy, lz + dz);
+			}
+		}
+	}
+
 	found->second->GenerateMesh();
 	found->second->GenerateModel();
 }
 
-void World::PlaceBlock(Vector3 Global, block_data block)
-{
+void World::PlaceBlock(Vector3 Global, block_data block) {
 	block_data* b = GetBlock(Global);
 	if (!b) return;
 	
 	block_data b2 = block;
 	SetBlock(Global, b2);
 
-	const int wx = (int)std::floor(Global.x);
-	const int wy = (int)std::floor(Global.y);
-	const int wz = (int)std::floor(Global.z);
+	const int wx = (int)	std::floor(Global.x);
+	const int wy = (int)	std::floor(Global.y);
+	const int wz = (int)	std::floor(Global.z);
 
 	if (wy < 0 || wy >= subchunk_size * chunk_height_subchunks) return;
 
-	const int cx = (int)std::floor(wx / (float)subchunk_size);
-	const int cz = (int)std::floor(wz / (float)subchunk_size);
+	const int cx = (int)	std::floor(wx / (float)subchunk_size);
+	const int cz = (int)	std::floor(wz / (float)subchunk_size);
 
 	auto found = chunks.find({ cx, cz });
 	if (found == chunks.end() || !found->second) return;
