@@ -187,8 +187,12 @@ int main()
 		
 	
 
+		const char* consBlockPos = TextFormat("%f, %f, %f", result.GlobalBlockPosition.x, result.GlobalBlockPosition.y, result.GlobalBlockPosition.z);
 
-		std::string blockTxt = "Looking at Block: " + type ;
+		std::string blockPos = consBlockPos;
+
+		std::string posBlockTxt = " : \n[BX/BY/BZ]" + blockPos;
+		std::string blockTxt = "Looking at Block: " + type + posBlockTxt;
 	
 	
 		// axis gizmo, always on top
@@ -237,6 +241,8 @@ int main()
 		if (IsKeyPressed(KEY_F8)) {
 			TakeScreenshot(ssCount.c_str());
 		}
+
+		DrawText(TextFormat("World Seed: %i", World::getSeed()), 10, 260, 35, PURPLE);
 
 	
 		//void damage

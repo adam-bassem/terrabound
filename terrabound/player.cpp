@@ -29,6 +29,7 @@ namespace
 	Texture2D itemSelectionHighlighter;
 	Texture2D playerInventory;
 	Texture2D playerCreativeInventory; //test
+	Texture2D compasses; //test
 
 	Texture2D block2d;
 
@@ -42,12 +43,19 @@ namespace
 	int health = max_health;
 	block_data currentBlock;
 
-Texture2D Load2dBlock() {
-	Image img = LoadImage("res/tiles_atlas.png");
-	Texture2D tex = LoadTextureFromImage(img);
-	UnloadImage(img);
-	return tex;
-}
+	Texture2D Load2dBlock() {
+		Image img = LoadImage("res/tiles_atlas.png");
+		Texture2D tex = LoadTextureFromImage(img);
+		UnloadImage(img);
+		return tex;
+	}
+
+	Texture2D LoadCompasses() {
+		Image img = LoadImage("res/gui/compasses.png");
+		Texture2D tex = LoadTextureFromImage(img);
+		UnloadImage(img);
+		return tex;
+	}
 
 	Texture2D LoadHeart(int id)
 	{
@@ -101,6 +109,8 @@ Texture2D Load2dBlock() {
 	}
 }
 static Mesh itemMesh;
+
+
 void DrawHearts()
 {
 	// health is in half-hearts (20 means 10 hearts)
@@ -125,15 +135,144 @@ void DrawHearts()
 
 float i = 1;
 
-void draw3dBlock() { //todo:draw a mesh that's a isometric block with the texture being from what is the current block.
-	//	const int x = 50;
-		//const int y = 600;
-	//	const int sx = x + 4;
-		//const int sy = y + 28;
-		//Currently, Just draw the bar. -Alex
-		//DrawMesh(mesh, Material(), Matrix());
-	//	DrawTextureEx(block3d, Vector2{ (float)x, (float)y }, 0, 4, WHITE);
-		///ImageDrawRectanglePro(, Rectangle(x, y, 128, 128), Vector2(x, y), 45.0f, WHITE);
+//void draw3dBlock() { //todo:draw a mesh that's a isometric block with the texture being from what is the current block.
+//	//	const int x = 50;
+//		//const int y = 600;
+//	//	const int sx = x + 4;
+//		//const int sy = y + 28;
+//		//Currently, Just draw the bar. -Alex
+//		//DrawMesh(mesh, Material(), Matrix());
+//	//	DrawTextureEx(block3d, Vector2{ (float)x, (float)y }, 0, 4, WHITE);
+//		///ImageDrawRectanglePro(, Rectangle(x, y, 128, 128), Vector2(x, y), 45.0f, WHITE);
+//}
+static float u = 0;
+static float v = 0;
+
+void drawCompass(PlayerCamera &camera) {
+
+	const Vector3 pos = camera.GetPosition();
+	const Vector3 f = camera.Forward();
+
+	float angle = std::atan2f(f.x, f.z) * RAD2DEG;
+
+	const int x = GetScreenWidth() - 120;
+	const int y = 30;
+
+
+
+	//const char* compass = "N";
+	//if (angle >= 315.0f || angle < 45.0f) compass = "N";
+
+	//else if (angle < 135.0f) compass = "W";
+
+	//else if (angle < 225.0f) compass = "S";
+
+	//else compass = "E";
+
+
+
+	std::cout << angle << "\n";
+
+	if (angle < 45 || angle < -45) {
+		u = 0;
+		v = 0;
+	}
+
+	if (angle > 45.0f && angle < 125) {
+		u = 16;
+		v = 32;
+	}
+
+
+
+	if (angle > 125 || angle < -150) {
+		u = 64;
+		v = 16;
+	}
+	//east
+	if (angle < -45 || angle < -150) {
+		u = 96;
+		v = 0;
+	}
+
+
+
+	//if (angle > 135.0f && angle < 200.0f) {
+	//	u = 16;
+	//	v = 32;
+	//}
+
+	//if (angle < 225.0f) {
+	//	u = 64;
+	//	v = 16;
+	// }   
+
+
+
+
+
+
+
+	//east
+
+
+
+	//if (angle >= 315.0f || angle < 45.0f) {
+	//	u = 0; v = 0;
+	//}
+
+
+	//else if (angle < 135.0f) {
+	//	u = 16;
+	//	v = 32;
+	//}
+
+
+	//else if (angle < 225.0f) {
+	//	u = 64;
+	//	v = 16;
+	//}
+	//else  if (angle < 300.0f){
+	//	u = 96;
+	//	v = 0;
+	//}
+
+
+
+	 //if (angle > 215.0f || angle < 300.0f) {
+		//u = 96;
+		//v = 0;
+	 //}
+
+
+
+	// if (angle >= 315.0f || angle < 45.0f) {
+	//	u = 0;
+	//	v = 0;
+ //	}
+	
+	
+	
+	//96, 0
+
+
+	//switch ((int) angle) {
+	//	//North
+	//	case 315: { u = 0; v = 0; break; }
+
+	//			//West
+	//	case 45: { u = 32; v = 16; break; }
+	//	//case 46: { u = 32; v = 16; break; }
+	//	case 47: { u = 32; v = 16; break; }
+
+
+
+	//	//case 45: { u = 0; v = 0; break; }
+	//}
+
+
+	DrawTexturePro(compasses, Rectangle(u, v, 16, 16), Rectangle(x , y, 96, 96), Vector2(0, 0), 0, WHITE);
+
 }
 
 void drawQuickItemSelectionBars() {
@@ -158,6 +297,8 @@ void drawQuickItemSelectionBars() {
 	DrawTextureEx(itemSelectionHighlighter, Vector2{ (float)sx * (i), (float)sy }, 0, 4, WHITE);
 
 }
+
+
 
 void Player::createItemMesh() {
 	std::vector<float> vertices;
@@ -305,6 +446,9 @@ void Player::Initialise()
 	playerInventory = LoadInventory(IDB_PNG8); //"res/gui/player_inventory.png"
 	playerCreativeInventory = LoadCreativeInventory("res/gui/player_creative_inventory.png"); //"res/gui/player_inventory.png"
 
+	compasses = LoadCompasses();
+
+
 	block2d = Load2dBlock();
 	createItemMesh();
 	lastRecordedTime = GetTime();
@@ -347,6 +491,7 @@ void Player::Shutdown()
 	UnloadTexture(playerInventory);
 	UnloadTexture(playerCreativeInventory);
 	UnloadTexture(block2d);
+	UnloadTexture(compasses);
 }
 
 void Player::DrawUI()
@@ -356,7 +501,8 @@ void Player::DrawUI()
 	}
 
 	drawQuickItemSelectionBars();
-	draw3dBlock();
+
+//	draw3dBlock();
 }
 
 void Player::Update(PlayerCamera& camera)
@@ -364,9 +510,9 @@ void Player::Update(PlayerCamera& camera)
 	double currentTime = GetTime();
 	double dt = currentTime - lastRecordedTime;
 	lastRecordedTime = currentTime;
-
+	
 	RaycastResult raycast = DDARaycast::DoRaycast(camera.GetPosition(), camera.Forward());
-
+	drawCompass(camera);
 	float t = 0;
 
 	if (!isCreative) {
@@ -467,8 +613,11 @@ void Player::Update(PlayerCamera& camera)
 
 	const char* compass = "N";
 	if (angle >= 315.0f || angle < 45.0f) compass = "N";
+
 	else if (angle < 135.0f) compass = "W";
+
 	else if (angle < 225.0f) compass = "S";
+
 	else compass = "E";
 
 

@@ -41,6 +41,7 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 	}
 
 	FastNoiseLite heightmap_noise;
+
 	heightmap_noise.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
 	heightmap_noise.SetSeed((int)seed);
 	heightmap_noise.SetFrequency(0.005f);

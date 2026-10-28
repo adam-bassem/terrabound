@@ -251,3 +251,7 @@ void World::PlaceBlock(Vector3 Global, block_data block)
 	found->second->GenerateMesh();
 	found->second->GenerateModel();
 }
+
+unsigned long long World::getSeed() {
+	return seed;
+}

@@ -26,4 +26,6 @@ namespace World
 	void SetBlock(Vector3 Global, block_data& data);
 	void BreakBlock(Vector3 Global);
 	void PlaceBlock(Vector3 Global, block_data block);
+
+	unsigned long long getSeed();
 }

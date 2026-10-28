@@ -16,11 +16,6 @@
 
 namespace Player
 {
-	
-
-	
-
-
 	void Initialise();
 
 	void Shutdown();
