@@ -173,103 +173,127 @@ void drawCompass(PlayerCamera &camera) {
 
 	std::cout << angle << "\n";
 
-	if (angle < 45 || angle < -45) {
+	//North
+	if (angle < 15 || angle < -15) {
 		u = 0;
 		v = 0;
 	}
-
-	if (angle > 45.0f && angle < 125) {
+	//Bit more north east
+	if (angle < -15 || angle < -30) {
 		u = 16;
-		v = 32;
+		v = 0;
+	}
+	//Bit more north east
+	if (angle < -30 || angle < -40) {
+		u = 32;
+		v = 0;
+	}
+	//quite a bit more north east
+	if (angle < -40 || angle < -55) {
+		u = 48;
+		v = 0;
 	}
 
-
-
-	if (angle > 125 || angle < -150) {
+	//quite north east
+	if (angle < -55 || angle < -65) {
 		u = 64;
-		v = 16;
+		v = 0;
 	}
+	//more east
+	if (angle < -65 || angle < -80) {
+		u = 80;
+		v = 0;
+	}
+
 	//east
-	if (angle < -45 || angle < -150) {
+	if (angle < -80 || angle < -110) {
 		u = 96;
 		v = 0;
 	}
 
-
-
-	//if (angle > 135.0f && angle < 200.0f) {
-	//	u = 16;
-	//	v = 32;
-	//}
-
-	//if (angle < 225.0f) {
-	//	u = 64;
-	//	v = 16;
-	// }   
-
-
-
-
-
-
-
 	//east
+	if (angle < -110 || angle < -120) {
+		u = 112;
+		v = 0;
+	}
+
+	if (angle < -120 || angle < -130) {
+		u = 0;
+		v = 16;
+	}
+
+	if (angle < -130 || angle < -145) {
+		u = 16;
+		v = 16;
+	}
+
+	if (angle < -145 || angle < -155) {
+		u = 32;
+		v = 16;
+	}
+
+	if (angle < -155 || angle < -170) {
+		u = 48;
+		v = 16;
+	}
+
+	if (angle > 170 || angle < -170) {
+		u = 64;
+		v = 16;
+	}
 
 
+	if (angle < 170.0f && angle > 155) {
+		u = 80;
+		v = 16;
+	}
 
-	//if (angle >= 315.0f || angle < 45.0f) {
-	//	u = 0; v = 0;
-	//}
+	if (angle < 155.0f && angle > 140) {
+		u = 96;
+		v = 16;
+	}
 
+	if (angle < 140.0f && angle > 130) {
+		u = 112;
+		v = 16;
+	}
 
-	//else if (angle < 135.0f) {
-	//	u = 16;
-	//	v = 32;
-	//}
+	if (angle < 130.0f && angle > 115) {
+		u = 0;
+		v = 32;
+	}
 
+	if (angle > 75.0f && angle < 115) {
+		u = 16;
+		v = 32;
+	}
 
-	//else if (angle < 225.0f) {
-	//	u = 64;
-	//	v = 16;
-	//}
-	//else  if (angle < 300.0f){
-	//	u = 96;
-	//	v = 0;
-	//}
+	if (angle > 60.0f && angle < 75.0f) {
+		u = 32;
+		v = 32;
+	}
 
+	if (angle > 45.0f && angle < 60.0f) {
+		u = 48;
+		v = 32;
+	}
 
+	if (angle > 35.0f && angle < 45.0f) {
+		u = 64;
+		v = 32;
+	}
 
-	 //if (angle > 215.0f || angle < 300.0f) {
-		//u = 96;
-		//v = 0;
-	 //}
+	if (angle > 25.0f && angle < 35.0f) {
+		u = 80;
+		v = 32;
+	}
 
+	if (angle > 15.0f && angle < 25.0f) {
+		u = 112;
+		v = 32;
+	}
 
-
-	// if (angle >= 315.0f || angle < 45.0f) {
-	//	u = 0;
-	//	v = 0;
- //	}
-	
-	
-	
-	//96, 0
-
-
-	//switch ((int) angle) {
-	//	//North
-	//	case 315: { u = 0; v = 0; break; }
-
-	//			//West
-	//	case 45: { u = 32; v = 16; break; }
-	//	//case 46: { u = 32; v = 16; break; }
-	//	case 47: { u = 32; v = 16; break; }
-
-
-
-	//	//case 45: { u = 0; v = 0; break; }
-	//}
-
+	//DrawText(TextFormat("Angle: %f", angle), 600, 100, 40, YELLOW);
 
 	DrawTexturePro(compasses, Rectangle(u, v, 16, 16), Rectangle(x , y, 96, 96), Vector2(0, 0), 0, WHITE);
 
