@@ -31,6 +31,8 @@ namespace
 	std::vector<std::pair<int, int>> load_order;
 	int load_order_radius = -1;
 
+	//so does this make the chunks generate in a spherical radius around the player? -Alex
+	
 	void BuildLoadOrder(int r) {
 		load_order.clear();
 		for (int x = -r; x <= r; x++)
@@ -73,9 +75,13 @@ namespace
 	}
 }
 
+//@(Attention) Maybe we could move the first world generation steps..
+//..  (noise maps, caves, feature placements etc) from the chunk class to here adam?,
+// if not i'll probably still move them to here -Alex
 void World::GenerateWorld()
 {
-	seed = (uint64_t)GetRandomValue(0, 0x7FFFFFFF);
+
+	seed =  (uint64_t)GetRandomValue(0, 0x7FFFFFFF);
 }
 
 void World::Render(PlayerCamera& camera)
@@ -89,7 +95,7 @@ void World::Render(PlayerCamera& camera)
 	constexpr int dx[4] = { 0, 0, 1, -1 };
 	constexpr int dz[4] = { 1, -1, 0, 0 };
 
-	constexpr int max_new_chunks = 2;
+	constexpr int max_new_chunks = 2; //Would probably be good idea to move these variables to the namespace for easier changing
 	constexpr int max_remesh = 2;
 
 	if (r != load_order_radius) BuildLoadOrder(r);

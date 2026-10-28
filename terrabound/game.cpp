@@ -75,6 +75,13 @@ int main()
 	Mesh skybox_mesh = GenMeshCube(2.0f, 2.0f, 2.0f);
 	Model skybox = LoadModelFromMesh(skybox_mesh);
 	Shader skybox_shader = PostProcessing::GetSkyShader();
+	Shader terrainShader = PostProcessing::GetTerrainShader();
+
+	int fogDensity = GetShaderLocation(terrainShader, "fogDense");
+	int fogGradient = GetShaderLocation(terrainShader, "fogGrad");
+	int skyColor = GetShaderLocation(terrainShader, "skyColor");
+
+
 	int sky_horizon_loc = GetShaderLocation(skybox_shader, "horizonColor");
 	int sky_zenith_loc = GetShaderLocation(skybox_shader, "zenithColor");
 	int sky_sun_loc = GetShaderLocation(skybox_shader, "sunDir");
@@ -83,19 +90,19 @@ int main()
 	Vector3 horizon = { 0.53f, 0.81f, 0.92f };
 	Vector3 zenith = { 0.25f, 0.45f, 0.85f };
 	Vector3 sun = Vector3Normalize({ -0.4f, -1.0f, -0.3f });
+	Vector3 skyColorVal = Vector3({ 0.0f, 0.0f, 0.0f });
+
+
+	float fogDense = 0.03f;
+	float fogGrad = 0.2f;
+
+
 	float sundir = 0.0f; // horizon
 	bool isInInventory = false;
 	// As long as the window is still open, keep looping
 	int invul = 0;
 	int screenShotCount = 0;
 	block_data* data = NULL;
-
-
-
-
-	//AABB playerBB = AABB(0, 0, 0, 16, 32, 16);
-	//AABB worldBB = AABB(0, 0, 0, 16, 32, 16);
-
 
 
 	while (!WindowShouldClose())
@@ -111,7 +118,9 @@ int main()
 		ClearBackground(BLACK);
 
 		BeginMode3D(player_camera.GetNativeCamera());
-
+		//SetShaderValue(terrainShader, fogDensity, &fogDense, SHADER_UNIFORM_FLOAT);
+		//SetShaderValue(terrainShader, fogGradient, &fogGrad, SHADER_UNIFORM_FLOAT);
+		//SetShaderValue(terrainShader, skyColor, &skyColorVal, SHADER_UNIFORM_VEC3);
 		rlDisableBackfaceCulling();
 
 		DrawModel(skybox, pos, 100.0f, WHITE);
@@ -194,18 +203,11 @@ int main()
 		std::string posBlockTxt = " : \n[BX/BY/BZ]" + blockPos;
 		std::string blockTxt = "Looking at Block: " + type + posBlockTxt;
 		
-
-	
-
-
-	
-	
 		// axis gizmo, always on top
 		rlDisableDepthTest();
 
 
-	//	if (IsKeyDown(KEY_F3)) {
-			const Vector3 gizmo_origin = Vector3Add(player_camera.GetPosition(), player_camera.Forward());
+		const Vector3 gizmo_origin = Vector3Add(player_camera.GetPosition(), player_camera.Forward());
 			DrawLine3D(gizmo_origin, Vector3Add(gizmo_origin, Vector3{ 0.15f, 0.0f, 0.0f }), RED);
 			DrawLine3D(gizmo_origin, Vector3Add(gizmo_origin, Vector3{ 0.0f, 0.15f, 0.0f }), GREEN);
 			DrawLine3D(gizmo_origin, Vector3Add(gizmo_origin, Vector3{ 0.0f, 0.0f, 0.15f }), BLUE);
@@ -302,6 +304,9 @@ int main()
 		SetShaderValue(skybox_shader, sky_horizon_loc, &horizon, SHADER_UNIFORM_VEC3);
 		SetShaderValue(skybox_shader, sky_zenith_loc, &zenith, SHADER_UNIFORM_VEC3);
 		SetShaderValue(skybox_shader, sky_sun_loc, &sun, SHADER_UNIFORM_VEC3);
+
+
+	
 
 		EndDrawing();
 	}

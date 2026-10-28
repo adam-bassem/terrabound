@@ -12,7 +12,7 @@
 
 #include "AABB.h"
 
-
+//Implement this correctly in the future -Alex
 AABB::AABB(float sx, float sy, float sz, float w, float h, float d) {
 	this->x0 = sx; 
 	this->y0 = sy;

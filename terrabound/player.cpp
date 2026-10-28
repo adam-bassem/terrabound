@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <iostream>
 
+
 namespace
 {
 	Texture2D empty_heart;
@@ -311,69 +312,69 @@ void drawQuickItemSelectionBars() {
 
 
 
-void Player::createItemMesh() {
-	std::vector<float> vertices;
-	std::vector<float> texCoords;
-	std::vector<int> indices;
-	//botttom left
-	vertices.push_back(-0.5f);
-	vertices.push_back(-0.5f);
-	vertices.push_back(0.0f);
-	//bottom right
-	vertices.push_back(0.5f);
-	vertices.push_back(-0.5f);
-	vertices.push_back(0.0f);
-
-	//upper right
-	vertices.push_back(0.5f);
-	vertices.push_back(0.5f);
-	vertices.push_back(0.0f);
-
-	//upper left
-	vertices.push_back(-0.5f);
-	vertices.push_back(0.5f);
-	vertices.push_back(0.0f);
-		
-	indices.push_back(0);
-	indices.push_back(1);
-	indices.push_back(2);
-	indices.push_back(2);
-	indices.push_back(3);
-	indices.push_back(0);
-
-	texCoords.push_back(0);
-	texCoords.push_back(0);
-
-	texCoords.push_back(1);
-	texCoords.push_back(0);
-
-	texCoords.push_back(1);
-	texCoords.push_back(1);
-
-	texCoords.push_back(0);
-	texCoords.push_back(1);
-
-	itemMesh = Mesh{};
-	itemMesh.vertexCount = (int)indices.size();
-	itemMesh.triangleCount = (int)indices.size() / 3;
-	itemMesh.vertices = (float*)MemAlloc(indices.size() * 3 * sizeof(float));
-	itemMesh.texcoords = (float*)MemAlloc(indices.size() * 2 * sizeof(float));
-	itemMesh.indices = nullptr;
-
-	for (size_t i = 0; i < indices.size(); i++)
-	{
-		const unsigned int k = indices[i];
-		for (int c = 0; c < 3; c++)
-		{
-			itemMesh.vertices[i * 3 + c] = vertices[k * 3 + c];
-		}
-		for (int c = 0; c < 2; c++)
-		{
-			itemMesh.texcoords[i * 2 + c] = texCoords[k * 2 + c];
-		}
-	}
-	UploadMesh(&itemMesh, false);
-}
+//void Player::createItemMesh() {
+//	std::vector<float> vertices;
+//	std::vector<float> texCoords;
+//	std::vector<int> indices;
+//	//botttom left
+//	vertices.push_back(-0.5f);
+//	vertices.push_back(-0.5f);
+//	vertices.push_back(0.0f);
+//	//bottom right
+//	vertices.push_back(0.5f);
+//	vertices.push_back(-0.5f);
+//	vertices.push_back(0.0f);
+//
+//	//upper right
+//	vertices.push_back(0.5f);
+//	vertices.push_back(0.5f);
+//	vertices.push_back(0.0f);
+//
+//	//upper left
+//	vertices.push_back(-0.5f);
+//	vertices.push_back(0.5f);
+//	vertices.push_back(0.0f);
+//		
+//	indices.push_back(0);
+//	indices.push_back(1);
+//	indices.push_back(2);
+//	indices.push_back(2);
+//	indices.push_back(3);
+//	indices.push_back(0);
+//
+//	texCoords.push_back(0);
+//	texCoords.push_back(0);
+//
+//	texCoords.push_back(1);
+//	texCoords.push_back(0);
+//
+//	texCoords.push_back(1);
+//	texCoords.push_back(1);
+//
+//	texCoords.push_back(0);
+//	texCoords.push_back(1);
+//
+//	itemMesh = Mesh{};
+//	itemMesh.vertexCount = (int)indices.size();
+//	itemMesh.triangleCount = (int)indices.size() / 3;
+//	itemMesh.vertices = (float*)MemAlloc(indices.size() * 3 * sizeof(float));
+//	itemMesh.texcoords = (float*)MemAlloc(indices.size() * 2 * sizeof(float));
+//	itemMesh.indices = nullptr;
+//
+//	for (size_t i = 0; i < indices.size(); i++)
+//	{
+//		const unsigned int k = indices[i];
+//		for (int c = 0; c < 3; c++)
+//		{
+//			itemMesh.vertices[i * 3 + c] = vertices[k * 3 + c];
+//		}
+//		for (int c = 0; c < 2; c++)
+//		{
+//			itemMesh.texcoords[i * 2 + c] = texCoords[k * 2 + c];
+//		}
+//	}
+//	UploadMesh(&itemMesh, false);
+//}
 
 void Player::drawInventory() { //Draw inventory -Alex
 	const int x = 10;
@@ -461,7 +462,7 @@ void Player::Initialise()
 
 
 	block2d = Load2dBlock();
-	createItemMesh();
+	//createItemMesh();
 	lastRecordedTime = GetTime();
 }
 
@@ -492,8 +493,7 @@ void Player::Initialise()
 //		aMaxZ >= bMinZ;
 //}
 
-void Player::Shutdown()
-{
+void Player::Shutdown() {
 	UnloadTexture(empty_heart);
 	UnloadTexture(half_heart);
 	UnloadTexture(full_heart);	
@@ -599,17 +599,17 @@ void Player::Update(PlayerCamera& camera)
 
 	int a = currentBlock.type;
 	switch (a) {
-	case 1: curBlockName = "Grass Block"; break;
-	case 2: curBlockName = "Dirt Block"; break;
-	case 3: curBlockName = "Stone Block"; break;
-	case 4: curBlockName = "Snow Block"; break;
-	case 5: curBlockName = "Log Block"; break;
-	case 6: curBlockName = "Leaf Block"; break;
-	case 7: curBlockName = "Bush Block"; break;
-	case 8: curBlockName = "GrassPlant"; break;
-	case 33: curBlockName = "Pumpkin"; break;
-	case 34: curBlockName = "Jack O' Lantern"; break;
-	default: curBlockName = "NULL"; break;
+		case 1: curBlockName = "Grass Block"; break;
+		case 2: curBlockName = "Dirt Block"; break;
+		case 3: curBlockName = "Stone Block"; break;
+		case 4: curBlockName = "Snow Block"; break;
+		case 5: curBlockName = "Log Block"; break;
+		case 6: curBlockName = "Leaf Block"; break;
+		case 7: curBlockName = "Bush Block"; break;
+		case 8: curBlockName = "GrassPlant"; break;
+		case 33: curBlockName = "Pumpkin"; break;
+		case 34: curBlockName = "Jack O' Lantern"; break;
+		default: curBlockName = "NULL"; break;
 	}
 
 	const bool in_reach = raycast.Hit && raycast.Distance <= 6.0f;

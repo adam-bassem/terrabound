@@ -21,18 +21,40 @@ namespace
 		in vec2 vertexTexCoord;
 		in vec4 vertexColor;
 
+	//	out float visibility;
+		
+	//	uniform float fogDense;
+	//	uniform float fogGrad;
+		
+
 		uniform mat4 mvp;
 
 		out vec2 fragTexCoord;
 		out vec3 fragColor;
 		out float fragAO;
 
+	//	float gradient = fogGrad;
+	//	float density = fogDense;
+
+	//	out vec3 toCamVec;
+
 		void main()
 		{
 			fragTexCoord = vertexTexCoord;
 			fragColor = vertexColor.rgb;
 			fragAO = vertexColor.a;
-			gl_Position = mvp * vec4(vertexPosition, 1.0);
+
+			vec4 worldPos = mvp * vec4(vertexPosition, 1.0);
+	//		vec4 posRelativeToCam = mvp * worldPos;
+			gl_Position = worldPos; // mvp * vec4(vertexPosition, 1.0);
+
+		//	 float dist = length(posRelativeToCam.xyz);
+		//	 visibility = exp(-pow((dist * density), gradient));
+		//	 visibility = clamp(visibility, 0.0, 1.0);
+
+
+		//	 toCamVec = (inverse(mvp) * vec4(0.0, 0.0, 0.0, 1.0)).xyz - worldPos.xyz;
+
 		}
 		)";
 
@@ -43,8 +65,12 @@ namespace
 		in vec3 fragColor;
 		in float fragAO;
 
-		uniform sampler2D texture0;
 
+	 //   in float visibility;
+		in vec3 toCamVec;
+
+		uniform sampler2D texture0;
+	//	uniform vec3 skyColor;
 		out vec4 finalColor;
 
 		void main()
@@ -52,6 +78,7 @@ namespace
 			vec4 texel = texture(texture0, fragTexCoord);
 			if (texel.a < 0.5) discard;
 			finalColor = vec4(texel.rgb * fragColor * fragAO, 1.0);
+		//	finalColor = mix(vec4(skyColor, 1.0), fragColor, visibility);
 		}
 		)";
 

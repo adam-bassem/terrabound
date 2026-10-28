@@ -15,9 +15,10 @@
 #include <cmath>
 #include <algorithm>
 
+
+//We probably should merge this class and character class with the player class -Alex
 // Initialise the camera
-PlayerCamera::PlayerCamera()
-{
+PlayerCamera::PlayerCamera() {
 	// Initialise raylib's camera
 	camera.fovy = 90.0f;
 	camera.position = { 0, 0, 0 };
@@ -107,6 +108,7 @@ Vector3 PlayerCamera::GetPosition()
 	return camera.position;
 }
 
+//Should be moved to the world class -Alex.
 int PlayerCamera::GetRenderDistanceChunks()
 {
 	return 8;

@@ -24,12 +24,14 @@ namespace
 	//WorldDecorations featureDecorations = WorldDecorations();
 }
 
-
+//So i think the chunk class should only have stuff related to generating the chunk mesh, 
+// checking the chunk neighbours and that stuff.
+// everything else should be moved to World class or their own classes. 
+// Just my opinion though -Alex
 
 Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 {
-	if (!world_texture_loaded)
-	{
+	if (!world_texture_loaded){
 	//	Resource rsrc = Resources::LoadTextureFromResource(IDB_PNG9);
 		world_texture = LoadTextureFromImage(LoadImage("res/tiles_atlas.png"));
 	//	LoadTextureFromImage(LoadImageFromMemory(".png", (const unsigned char*)rsrc.Data, rsrc.Size));
@@ -39,6 +41,8 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 		SetTextureWrap(world_texture, TEXTURE_WRAP_CLAMP);
 		world_texture_loaded = true;
 	}
+
+	//seed = 1375047996;
 
 	FastNoiseLite heightmap_noise;
 
@@ -86,7 +90,7 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 
 
 	constexpr float terrain_base = 96.0f;
-	constexpr float terrain_amp = 120.0f;
+	constexpr float terrain_amp = 62.0f;
 
 	//constexpr float terrain_base = 12.0f;
 	//constexpr float terrain_amp = 12.0f;
@@ -491,6 +495,8 @@ void Chunk::decoratePumpkins(Vector3 base)
 	set(bx, by + 1, bz, BLOCK_PUMPKIN);
 }
 
+
+//Ofcourse as most methods, this may require a rewrite -Alex.
 void Chunk::DecorateSecondPass()
 {
 	if (decorated) return;
@@ -517,7 +523,7 @@ void Chunk::DecorateSecondPass()
 			else if (r < 13.0f) 
 				DecorateBush(Vector3 { (float)x, (float)heightmap[x][z], (float)z }); // 1.6% bush
 			else if (r < 13.5f)
-				decoratePumpkins(Vector3{ (float)x, (float)heightmap[x][z], (float)z }); // 1.6% bush
+				decoratePumpkins(Vector3{ (float)x, (float)heightmap[x][z], (float)z }); // 0.5% pumpkins
 			else if (r < 86.0f) 
 				SetBlock(Vector3 { (float)x, (float)heightmap[x][z], (float)z }, Block::GetBlock(BLOCK_SHORT_GRASS)); // 6% short grass
 			else if (r < 120.0f)
@@ -701,6 +707,7 @@ void Chunk::GenerateModel()
 		subchunk.subchunk_model = LoadModelFromMesh(subchunk.subchunk_mesh);
 		subchunk.subchunk_mesh = Mesh { };
 		subchunk.subchunk_model.materials[0].shader = PostProcessing::GetTerrainShader();
+	
 		subchunk.subchunk_model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = world_texture;
 	}
 
@@ -718,6 +725,8 @@ static block_data null_block =
 {
 	.type = BLOCK_AIR,
 };
+
+
 block_data& Chunk::GetBlock(Vector3 Relative)
 {
 	int x = (int)Relative.x;

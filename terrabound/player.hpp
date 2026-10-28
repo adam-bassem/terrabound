@@ -27,7 +27,7 @@ namespace Player
 
 	void drawInventory();
 	
-	void createItemMesh();
+	//void createItemMesh();
 
 	void Update(PlayerCamera& camera);
 

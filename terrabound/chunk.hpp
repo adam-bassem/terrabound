@@ -19,7 +19,7 @@
 //#include "WorldDecorations.h" //Doesn't work
 
 constexpr int subchunk_size = 32;
-constexpr int chunk_height_subchunks = 12;
+constexpr int chunk_height_subchunks = 12; //Default 12
 
 struct Subchunk
 {

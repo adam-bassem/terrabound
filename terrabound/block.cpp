@@ -552,14 +552,6 @@ std::vector<UV> Block::GetUV(block_type type, int variant)
 		int row = 0;
 
 
-
-//#define NORTH = 0;
-//#define EAST = 1;
-//#define WEST = 2;
-//#define SOUTH = 3;
-//#define UP = 4;
-//#define DOWN = 5;
-
 		const int NORTH = 0;
 		const int EAST = 1;
 		const int WEST = 2;
