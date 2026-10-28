@@ -74,7 +74,7 @@ float Block::GetHardness(block_data& data)
 
 		case BLOCK_BEDROCK:
 		{
-			return -1;
+			return 3000000000;
 		}
 
 		case BLOCK_GRASS:
@@ -112,9 +112,19 @@ float Block::GetHardness(block_data& data)
 			return 0.25f;
 		}
 
+		case BLOCK_PUMPKIN : {
+			return 1.25f;
+		}
+
+		case BLOCK_JACK_O_LANTERN: {
+			return 1.25f;
+		}
+
 		default:
 		{
-			return 1e9;
+
+			return 5.0f;
+			//return 1e9; //Ok this is too high to be a default -Alex
 		}
 	}
 }
@@ -464,6 +474,8 @@ block_data Block::GetBlock(block_type type)
 		case BLOCK_CLAY:
 		case BLOCK_MOSSY_ROCK:
 		case BLOCK_BEDROCK:
+		case BLOCK_PUMPKIN:
+		case BLOCK_JACK_O_LANTERN:
 		case BLOCK_WOOD_LOG:
 		{
 			return MakeBlock(type);
@@ -539,16 +551,66 @@ std::vector<UV> Block::GetUV(block_type type, int variant)
 		int col = 0;
 		int row = 0;
 
+
+
+//#define NORTH = 0;
+//#define EAST = 1;
+//#define WEST = 2;
+//#define SOUTH = 3;
+//#define UP = 4;
+//#define DOWN = 5;
+
+		const int NORTH = 0;
+		const int EAST = 1;
+		const int WEST = 2;
+		const int SOUTH = 3;
+		const int UP = 4;
+		const int DOWN = 5;
+
 		switch (type)
 		{
 		case BLOCK_GRASS: { 
-			if (face == 4) col = 0;
-			else if (face == 5) col = 2;
+			if (face == UP) col = 0;
+			else if (face == DOWN) col = 2;
 			else col = 1;
 			break;
 		}
 
+		case BLOCK_JACK_O_LANTERN: {
+			if (face == UP) {
+				col = 6; row = 2;
+			}
+			else if (face == DOWN) {
+				col = 7; row = 2;
+			}
+			else if (face == WEST || face == EAST || face == SOUTH) {
+				col = 3; 
+				row = 2; 
+			}
+			else {
+				col = 5;
+				row = 2;
+			}
+			break;
+		}
+
+
 		case BLOCK_DIRT: { col = 2; break; }
+
+		case BLOCK_PUMPKIN: {
+			if (face == UP) {
+				col = 6; row = 2;
+			}
+			else if (face == DOWN) {
+				col = 7; row = 2;
+			}
+			else {
+				col = 3;
+				row = 2;
+			}
+	
+			break;
+		}
 
 		case BLOCK_STONE: { col = 3; break; }
 

@@ -49,7 +49,9 @@ enum block_type
 	BLOCK_MOSSY_ROCK,
 	BLOCK_GOLD_ORE,
 	BLOCK_DIAMOND_ORE,
-	BLOCK_TITANIUM_ORE	
+	BLOCK_TITANIUM_ORE,	
+	BLOCK_PUMPKIN,
+	BLOCK_JACK_O_LANTERN,
 };
 
 // test states for filled block,

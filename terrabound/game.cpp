@@ -174,6 +174,8 @@ int main()
 				case 30: { type = "GOLD ORE"; break; }
 				case 31: { type = "DIAMOND ORE"; break; }
 				case 32: { type = "TITANIUM ORE"; break; }
+				case 33: { type = "PUMPKIN BLOCK"; break; }
+				case 34: { type = "JACK O' LANTERN BLOCK"; break; }
 				default: { type = "NULL"; break; }
 				}
 			}

@@ -534,7 +534,7 @@ void Player::Update(PlayerCamera& camera)
 		t = 0.15f;
 	}
 	else {
-		t = 0.002f;
+		t = 0.02f;
 	}
 
 	if (IsKeyPressed(KEY_ONE)) {
@@ -563,12 +563,12 @@ void Player::Update(PlayerCamera& camera)
 	}
 
 	if (IsKeyPressed(KEY_SIX)) {
-		//	currentBlock = BLOCK_SHORT_GRASS;
+		currentBlock.type = BLOCK_JACK_O_LANTERN;
 		i = 7.34f;
 	}
 
 	if (IsKeyPressed(KEY_SEVEN)) {
-		//	currentBlock = BLOCK_SHORT_GRASS;
+		currentBlock.type = BLOCK_PUMPKIN;
 		i = 8.6f;
 	}
 
@@ -606,7 +606,9 @@ void Player::Update(PlayerCamera& camera)
 	case 5: curBlockName = "Log Block"; break;
 	case 6: curBlockName = "Leaf Block"; break;
 	case 7: curBlockName = "Bush Block"; break;
-	case 8: curBlockName = "Grass Plant"; break;
+	case 8: curBlockName = "GrassPlant"; break;
+	case 33: curBlockName = "Pumpkin"; break;
+	case 34: curBlockName = "Jack O' Lantern"; break;
 	default: curBlockName = "NULL"; break;
 	}
 

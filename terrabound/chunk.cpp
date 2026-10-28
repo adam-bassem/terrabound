@@ -465,6 +465,32 @@ void Chunk::DecorateBush(Vector3 base)
 	set(bx, by + 1, bz, BLOCK_BUSH_LEAVES);
 }
 
+void Chunk::decoratePumpkins(Vector3 base)
+{
+	const int bx = (int)base.x;
+	const int by = (int)base.y;
+	const int bz = (int)base.z;
+	const int max_y = subchunk_size * chunk_height_subchunks;
+
+	auto set = [&](int x, int y, int z, auto type)
+		{
+			if (x < 0 || x >= subchunk_size || z < 0 || z >= subchunk_size) return;
+			if (y < 0 || y >= max_y) return;
+			SetBlock(Vector3{ (float)x, (float)y, (float)z }, Block::GetBlock(type));
+		};
+
+	// 3x3 at the surface level, one block on top
+	for (int dx = -1; dx <= 1; dx++)
+	{
+		for (int dz = -1; dz <= 1; dz++)
+		{
+			set(bx + dx, by, bz + dz, BLOCK_PUMPKIN);
+		}
+	}
+
+	set(bx, by + 1, bz, BLOCK_PUMPKIN);
+}
+
 void Chunk::DecorateSecondPass()
 {
 	if (decorated) return;
@@ -490,6 +516,8 @@ void Chunk::DecorateSecondPass()
 				DecoratePineTree(Vector3{ (float)x, (float)heightmap[x][z], (float)z }, rng); // 0.2% pine
 			else if (r < 13.0f) 
 				DecorateBush(Vector3 { (float)x, (float)heightmap[x][z], (float)z }); // 1.6% bush
+			else if (r < 13.5f)
+				decoratePumpkins(Vector3{ (float)x, (float)heightmap[x][z], (float)z }); // 1.6% bush
 			else if (r < 86.0f) 
 				SetBlock(Vector3 { (float)x, (float)heightmap[x][z], (float)z }, Block::GetBlock(BLOCK_SHORT_GRASS)); // 6% short grass
 			else if (r < 120.0f)

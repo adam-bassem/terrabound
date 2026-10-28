@@ -64,5 +64,6 @@ private:
 	void DecorateTree(Vector3 base, std::mt19937_64& rng);
 	void DecoratePineTree(Vector3 base, std::mt19937_64& rng);
 	void DecorateBush(Vector3 base);
+	void decoratePumpkins(Vector3 base);
 	void decorateSkyIsland(Vector3 base, std::mt19937_64& rng);
 };
