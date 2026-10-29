@@ -12,8 +12,51 @@
  */
 #include "WorldDecorations.h"
 //Doesn't work right now -Alex
-void WorldDecorations::DecorateTree(Chunk* chunk, Vector3 base, std::mt19937_64& rng)
-{
+
+
+void WorldDecoration::DecorateFeatureSecondPass(Chunk* chunk, uint64_t seed){
+	if (generatedFeature) return;
+	generatedFeature = true;
+
+	std::mt19937_64 rng((uint64_t)seed
+		^ ((uint64_t)(int64_t)chunk->Position.x * 0x9E3779B97F4A7C15ull)
+		^ ((uint64_t)(int64_t)chunk->Position.z * 0xC2B2AE3D27D4EB4Full));
+	std::uniform_int_distribution<int> roll(0, 999);
+	std::uniform_int_distribution<int> roll2(-1000.000f, 1000.000f);
+	std::uniform_int_distribution<int> roll3(-50.000f, 70.000f);
+	const float r2 = roll2(rng);
+
+
+	for (int x = 0; x < subchunk_size; x++) {
+		for (int z = 0; z < subchunk_size; z++) {
+			const float r = roll(rng);
+			const float r3 = roll3(rng);
+
+			if (r < 7.0f)
+				DecorateTree(chunk ,Vector3{ (float)x, (float)chunk->heightmap[x][z], (float)z }, rng); // 0.8% tree
+			else if (r < 7.2f)
+				DecoratePineTree(chunk ,Vector3{ (float)x, (float)chunk->heightmap[x][z], (float)z }, rng); // 0.2% pine
+			else if (r < 13.0f)
+				DecorateBush(chunk, Vector3{ (float)x, (float)chunk->heightmap[x][z], (float)z }); // 1.6% bush
+		
+
+			
+			//	else if (r < 13.5f)
+		//		decoratePumpkins(Vector3{ (float)x, (float)heightmap[x][z], (float)z }); // 0.5% pumpkins
+		//	else if (r < 86.0f)
+		//		SetBlock(Vector3{ (float)x, (float)heightmap[x][z], (float)z }, Block::GetBlock(BLOCK_SHORT_GRASS)); // 6% short grass
+		//	else if (r < 120.0f)
+		//		SetBlock(Vector3{ (float)x, (float)heightmap[x][z], (float)z }, Block::GetBlock(BLOCK_RED_FLOWER)); // 10.5% red flower
+		//	else if (r < 130.0f)
+			//	SetBlock(Vector3{ (float)x, (float)heightmap[x][z], (float)z }, Block::GetBlock(BLOCK_OXEYE_DAISY)); // 12.5% oxeye daisy flower
+
+			//if (r2 == r3)
+		//		decorateSkyIsland(Vector3{ (float)x, (float)heightmap[x][z], (float)z }, rng); // 1.6% bush
+		}
+	}
+}
+
+void WorldDecoration::DecorateTree(Chunk* chunk, Vector3 base, std::mt19937_64& rng) {
 	const int bx = (int)base.x;
 	const int by = (int)base.y;
 	const int bz = (int)base.z;
@@ -55,7 +98,7 @@ void WorldDecorations::DecorateTree(Chunk* chunk, Vector3 base, std::mt19937_64&
 	}
 }
 
-void WorldDecorations::DecoratePineTree(Chunk* chunk, Vector3 base, std::mt19937_64& rng) {
+void WorldDecoration::DecoratePineTree(Chunk* chunk, Vector3 base, std::mt19937_64& rng) {
 	const int bx = (int)base.x;
 	const int by = (int)base.y;
 	const int bz = (int)base.z;
@@ -193,7 +236,7 @@ void WorldDecorations::DecoratePineTree(Chunk* chunk, Vector3 base, std::mt19937
 }
 
 
-void WorldDecorations::DecorateBush(Chunk* chunk, Vector3 base)
+void WorldDecoration::DecorateBush(Chunk* chunk, Vector3 base)
 {
 	const int bx = (int)base.x;
 	const int by = (int)base.y;

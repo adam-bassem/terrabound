@@ -108,12 +108,6 @@ Vector3 PlayerCamera::GetPosition()
 	return camera.position;
 }
 
-//Should be moved to the world class -Alex.
-int PlayerCamera::GetRenderDistanceChunks()
-{
-	return 8;
-}
-
 // Returns the native camera (Camera3D)
 Camera3D& PlayerCamera::GetNativeCamera()
 {

@@ -19,16 +19,27 @@
 #include "chunk.hpp"
 #include "block.hpp"
 
-
-
-class WorldDecorations {
-	public :
-		bool decorated = false;
+namespace WorldDecoration {
 	void DecorateTree(Chunk* chunk, Vector3 base, std::mt19937_64& rng);
 
 	void DecoratePineTree(Chunk* chunk, Vector3 base, std::mt19937_64& rng);
 
 	void DecorateBush(Chunk* chunk, Vector3 base);
 
-	void DecorateSecondPass();
+	void DecorateFeatureSecondPass(Chunk* chunk, uint64_t seed);
+
+	static bool generatedFeature = false;
+}
+
+
+class WorldDecorations {
+	public :
+		
+	//void DecorateTree(Chunk* chunk, Vector3 base, std::mt19937_64& rng);
+
+	//void DecoratePineTree(Chunk* chunk, Vector3 base, std::mt19937_64& rng);
+
+	//void DecorateBush(Chunk* chunk, Vector3 base);
+
+	//void DecorateSecondPass();
 };

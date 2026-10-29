@@ -29,8 +29,7 @@ namespace
 // everything else should be moved to World class or their own classes. 
 // Just my opinion though -Alex
 
-Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
-{
+Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed) {
 	if (!world_texture_loaded){
 	//	Resource rsrc = Resources::LoadTextureFromResource(IDB_PNG9);
 		world_texture = LoadTextureFromImage(LoadImage("res/tiles_atlas.png"));
@@ -175,8 +174,7 @@ Chunk::Chunk(Vector3 position, uint64_t _seed) : Position(position), seed(_seed)
 }
 
 // TODO: chunk_decorate.cpp
-void Chunk::DecorateTree(Vector3 base, std::mt19937_64& rng)
-{
+void Chunk::DecorateTree(Vector3 base, std::mt19937_64& rng) {
 	const int bx = (int)base.x;
 	const int by = (int)base.y;
 	const int bz = (int)base.z;
@@ -714,8 +712,7 @@ void Chunk::GenerateModel()
 	has_model = true;
 }
 
-Model* Chunk::GetModel(int subchunk)
-{
+Model* Chunk::GetModel(int subchunk) {
 	if (subchunk < 0 || subchunk >= chunk_height_subchunks) return nullptr;
 	if (!subchunks[subchunk].subchunk_model.meshes) return nullptr;
 	return &subchunks[subchunk].subchunk_model;
@@ -727,8 +724,7 @@ static block_data null_block =
 };
 
 
-block_data& Chunk::GetBlock(Vector3 Relative)
-{
+block_data& Chunk::GetBlock(Vector3 Relative) {
 	int x = (int)Relative.x;
 	int y = (int)Relative.y;
 	int z = (int)Relative.z;
@@ -740,8 +736,7 @@ block_data& Chunk::GetBlock(Vector3 Relative)
 	return subchunks[y / subchunk_size].blocks[x][y % subchunk_size][z];
 }
 
-void Chunk::SetBlock(Vector3 Relative, block_data data)
-{
+void Chunk::SetBlock(Vector3 Relative, block_data data) {
 	const int x = (int)Relative.x;
 	const int y = (int)Relative.y;
 	const int z = (int)Relative.z;
@@ -751,42 +746,34 @@ void Chunk::SetBlock(Vector3 Relative, block_data data)
 
 	subchunks[y / subchunk_size].blocks[x][y % subchunk_size][z] = data;
 
-	for (int dx = -1; dx <= 1; dx++)
-	{
-		for (int dy = -1; dy <= 1; dy++)
-		{
-			for (int dz = -1; dz <= 1; dz++)
-			{
+	for (int dx = -1; dx <= 1; dx++) {
+		for (int dy = -1; dy <= 1; dy++) {
+			for (int dz = -1; dz <= 1; dz++) {
 				MarkDirtyAt(x + dx, y + dy, z + dz);
 			}
 		}
 	}
 }
 
-void Chunk::MarkDirtyAt(int x, int y, int z)
-{
+void Chunk::MarkDirtyAt(int x, int y, int z) {
 	if (y < 0 || y >= subchunk_size * chunk_height_subchunks) return;
 
-	if (x < 0)
-	{
+	if (x < 0) {
 		if (neighbours[3]) neighbours[3]->MarkDirtyAt(x + subchunk_size, y, z);
 		return;
 	}
 
-	if (x >= subchunk_size)
-	{
+	if (x >= subchunk_size) {
 		if (neighbours[2]) neighbours[2]->MarkDirtyAt(x - subchunk_size, y, z);
 		return;
 	}
 
-	if (z < 0)
-	{
+	if (z < 0) {
 		if (neighbours[1]) neighbours[1]->MarkDirtyAt(x, y, z + subchunk_size);
 		return;
 	}
 
-	if (z >= subchunk_size)
-	{
+	if (z >= subchunk_size) {
 		if (neighbours[0]) neighbours[0]->MarkDirtyAt(x, y, z - subchunk_size);
 		return;
 	}

@@ -11,6 +11,7 @@
  */
 
 #include "world.hpp"
+#include "WorldDecorations.h"
 #include "chunk.hpp"
 #include "raylib.h"
 #include <cmath>
@@ -30,6 +31,10 @@ namespace
 	// Chunk offsets inside the render circle, sorted nearest first. Built once per radius.
 	std::vector<std::pair<int, int>> load_order;
 	int load_order_radius = -1;
+	int chunkRenderDist = 8;
+
+	constexpr int max_new_chunks = 2;
+	constexpr int max_remesh = 2;
 
 	//so does this make the chunks generate in a spherical radius around the player? -Alex
 	
@@ -57,7 +62,12 @@ namespace
 
 		Vector3 block_origin = { (float)(x * subchunk_size), 0, (float)(z * subchunk_size) };
 		Chunk* c = new Chunk(block_origin, seed);
+
+
 		chunks[{ x, z }] = c;
+
+
+
 
 		constexpr int dx[4] = { 0, 0, 1, -1 };
 		constexpr int dz[4] = { 1, -1, 0, 0 };
@@ -71,6 +81,11 @@ namespace
 			to_remesh.insert({ x + dx[i], z + dz[i] });
 		}
 		to_remesh.insert({ x, z });
+
+	//	if (WorldDecoration::generatedFeature);
+
+	//	WorldDecoration::DecorateFeatureSecondPass(c, seed);
+		//delete[] c;
 		return true;
 	}
 }
@@ -78,25 +93,23 @@ namespace
 //@(Attention) Maybe we could move the first world generation steps..
 //..  (noise maps, caves, feature placements etc) from the chunk class to here adam?,
 // if not i'll probably still move them to here -Alex
-void World::GenerateWorld()
-{
+void World::GenerateWorld() {
 
 	seed =  (uint64_t)GetRandomValue(0, 0x7FFFFFFF);
+	
+
+
 }
 
-void World::Render(PlayerCamera& camera)
-{
+void World::Render(PlayerCamera& camera) {
 	Vector3 position = camera.GetPosition();
 	int chunk_x = (int)floorf(position.x / subchunk_size);
 	int chunk_z = (int)floorf(position.z / subchunk_size);
-	int r = camera.GetRenderDistanceChunks();
+	int r = chunkRenderDist;  
 
 	// Index matches Chunk::neighbours, 0 N (+z), 1 S (-z), 2 E (+x), 3 W (-x)
 	constexpr int dx[4] = { 0, 0, 1, -1 };
 	constexpr int dz[4] = { 1, -1, 0, 0 };
-
-	constexpr int max_new_chunks = 2; //Would probably be good idea to move these variables to the namespace for easier changing
-	constexpr int max_remesh = 2;
 
 	if (r != load_order_radius) BuildLoadOrder(r);
 
@@ -106,6 +119,9 @@ void World::Render(PlayerCamera& camera)
 	{
 		if (created >= max_new_chunks) break;
 		if (ProcessChunk(chunk_x + offset.first, chunk_z + offset.second)) created++;
+		if (WorldDecoration::generatedFeature) continue;
+
+
 	}
 
 	// Pass 2: decorate chunks within 75% of render distance, then remesh dirty chunks
@@ -120,15 +136,24 @@ void World::Render(PlayerCamera& camera)
 		const int z = chunk_z + offset.second;
 		auto found = chunks.find({ x, z });
 		if (found == chunks.end() || !found->second) continue;
-		if (found->second->decorated) continue;
 
-		found->second->DecorateSecondPass();
+		//Move Decoration stuff to it's own class and change this here to support it 
 
-		for (int i = 0; i < 4; i++)
-		{
+		//if (WorldDecoration::generatedFeature) continue;
+		
+		//WorldDecoration::DecorateFeatureSecondPass(found->second, seed);
+
+		//if (found->second->decorated) continue;
+
+		//found->second->DecorateSecondPass();
+
+		for (int i = 0; i < 4; i++) {
 			std::pair<int, int> nk = { x + dx[i], z + dz[i] };
 			if (chunks.count(nk)) to_remesh.insert(nk);
 		}
+		Chunk* chunk = found->second;
+		if (found->second->decorated) continue;
+		WorldDecoration::DecorateFeatureSecondPass(chunk, seed);
 		to_remesh.insert({ x, z });
 	}
 
@@ -162,6 +187,8 @@ void World::Render(PlayerCamera& camera)
 			DrawModel(*model, block_origin, 1, WHITE);
 		}
 	}
+	
+
 }
 
 block_data* World::GetBlock(Vector3 Global)
@@ -184,8 +211,7 @@ block_data* World::GetBlock(Vector3 Global)
 	return &found->second->GetBlock({ (float)lx, (float)wy, (float)lz });
 }
 
-void World::SetBlock(Vector3 Global, block_data& data)
-{
+void World::SetBlock(Vector3 Global, block_data& data) {
 	const int wx = (int)std::floor(Global.x);
 	const int wy = (int)std::floor(Global.y);
 	const int wz = (int)std::floor(Global.z);
